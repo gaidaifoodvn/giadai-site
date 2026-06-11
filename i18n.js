@@ -1,39 +1,44 @@
 /* ============================================================
-   GIA DAI — language switcher (EN / VI)
-   Walks the page, swaps text to Vietnamese and back, and
-   remembers the choice in localStorage so it sticks across
-   pages and reloads.
+   GIA DAI — multi-language switcher
+   English (source) · Tiếng Việt · 한국어 · Français · 日本語 · 中文
+   Walks the page, swaps visible text per the chosen language,
+   remembers the choice in localStorage, and builds its own
+   dropdown selector inside the existing .lang container.
+   Keys are the EXACT visible English text.
    ============================================================ */
 (function () {
   'use strict';
 
-  /* English → Vietnamese dictionary. Keys are the EXACT visible
-     English text. Add more pages' strings here over time. */
-  var VI = {
-    /* top bar */
-    "Premium Vietnamese Seafood & Agricultural Export · Since 2002": "Xuất Khẩu Hải Sản & Nông Sản Việt Nam Cao Cấp · Từ Năm 2002",
+  var LANGS = [
+    { code: 'en', label: 'English',    short: 'EN' },
+    { code: 'vi', label: 'Tiếng Việt', short: 'VI' },
+    { code: 'ko', label: '한국어',      short: 'KO' },
+    { code: 'fr', label: 'Français',   short: 'FR' },
+    { code: 'ja', label: '日本語',      short: 'JA' },
+    { code: 'zh', label: '中文',        short: 'ZH' }
+  ];
 
-    /* nav */
+  var DICT = {};
+
+  /* ---------------------------------------------------------- VIETNAMESE */
+  DICT.vi = {
+    "Premium Vietnamese Seafood & Agricultural Export · Since 2002": "Xuất Khẩu Hải Sản & Nông Sản Việt Nam Cao Cấp · Từ Năm 2002",
     "Home": "Trang Chủ",
     "Products": "Sản Phẩm",
     "Quality": "Chất Lượng",
     "Wholesale": "Bán Sỉ",
     "About": "Giới Thiệu",
     "About Us": "Về Chúng Tôi",
+    "About Us ": "Về Chúng Tôi",
     "Contact": "Liên Hệ",
     "Request a Quote": "Yêu Cầu Báo Giá",
     "Search products…": "Tìm sản phẩm…",
-
-    /* hero */
     "Seafood & Agricultural Export": "Xuất Khẩu Hải Sản & Nông Sản",
     "From the Mekong": "Từ Sông Mekong",
     "to the world.": "đến toàn thế giới.",
     "Premium Vietnamese Seafood & Agriculture · Since 2002": "Hải Sản & Nông Sản Việt Nam Cao Cấp · Từ Năm 2002",
     "We source and export premium Vietnamese seafood and agricultural products, from frozen and dried seafood to prepared foods, shipping direct from Ho Chi Minh City to importers worldwide.": "Chúng tôi thu mua và xuất khẩu hải sản và nông sản Việt Nam cao cấp, từ hải sản đông lạnh và khô đến thực phẩm chế biến, giao hàng trực tiếp từ Thành phố Hồ Chí Minh đến các nhà nhập khẩu trên toàn thế giới.",
     "Browse Catalogue": "Xem Danh Mục",
-
-    /* about */
-    "About Us ": "Về Chúng Tôi",
     "Your Vietnamese food specialist": "Chuyên gia thực phẩm Việt Nam của bạn",
     "A privately owned import and export company supplying premium Vietnamese seafood and agricultural products from Ho Chi Minh City to markets at home and abroad. More than twenty years on, our promise is simple: good price, good quality, good service.": "Công ty xuất nhập khẩu tư nhân cung cấp hải sản và nông sản Việt Nam cao cấp từ Thành phố Hồ Chí Minh đến thị trường trong và ngoài nước. Hơn hai mươi năm qua, cam kết của chúng tôi rất đơn giản: giá tốt, chất lượng tốt, dịch vụ tốt.",
     "Cold-Chain Logistics": "Logistics Chuỗi Lạnh",
@@ -41,8 +46,6 @@
     "Direct Sourcing & Export": "Thu Mua & Xuất Khẩu Trực Tiếp",
     "Bought straight from trusted Vietnamese farms and fisheries, then shipped worldwide with full documentation.": "Mua trực tiếp từ các trang trại và ngư trường Việt Nam uy tín, sau đó xuất khẩu toàn cầu với đầy đủ chứng từ.",
     "Est. Since": "Thành Lập Từ",
-
-    /* trio */
     "Seafood": "Hải Sản",
     "Premium Seafood": "Hải Sản Cao Cấp",
     "Frozen and dried shrimp, fish, squid and crab from Vietnam's coast and the Mekong Delta.": "Tôm, cá, mực và cua đông lạnh và khô từ bờ biển Việt Nam và Đồng bằng sông Cửu Long.",
@@ -52,8 +55,6 @@
     "Food": "Thực Phẩm",
     "Prepared Food": "Thực Phẩm Chế Biến",
     "Ready-to-cook Vietnamese specialities and value-added dishes, packed for export.": "Các món đặc sản Việt Nam ăn liền và món giá trị gia tăng, đóng gói để xuất khẩu.",
-
-    /* portfolio */
     "Product Portfolio": "Danh Mục Sản Phẩm",
     "Explore our categories": "Khám phá các danh mục",
     "View full catalogue": "Xem toàn bộ danh mục",
@@ -68,8 +69,6 @@
     "Frozen Fresh Agricultural": "Nông Sản Tươi Đông Lạnh",
     "Dried Agricultural": "Nông Sản Khô",
     "Exotic Dried Fruit": "Trái Cây Sấy Đặc Sản",
-
-    /* popular products */
     "Featured": "Nổi Bật",
     "Popular products": "Sản phẩm phổ biến",
     "View all": "Xem tất cả",
@@ -81,8 +80,6 @@
     "Shrimp Spring Rolls": "Chả Giò Rế Tôm Cua",
     "Export ready": "Sẵn sàng xuất khẩu",
     "Enquire": "Liên hệ",
-
-    /* quality */
     "Quality You Can Trust": "Chất Lượng Bạn Có Thể Tin Tưởng",
     "Quality & Standards": "Chất Lượng & Tiêu Chuẩn",
     "US Registered": "Đăng Ký Tại Hoa Kỳ",
@@ -101,8 +98,6 @@
     "Full documentation": "Đầy đủ chứng từ",
     "See All": "Xem Tất Cả",
     "Our standards": "Tiêu chuẩn của chúng tôi",
-
-    /* duo banner */
     "Export Catalogue": "Danh Mục Xuất Khẩu",
     "Product Catalogue": "Danh Mục Sản Phẩm",
     "Browse our full range of Vietnamese seafood and agricultural products, with pack sizes and export specs.": "Xem toàn bộ các sản phẩm hải sản và nông sản Việt Nam của chúng tôi, kèm quy cách đóng gói và thông số xuất khẩu.",
@@ -110,8 +105,6 @@
     "Partner With Us?": "Hợp Tác Cùng Chúng Tôi?",
     "Bring the richness of Vietnamese seafood and produce to your market with a supplier you can rely on.": "Mang sự phong phú của hải sản và nông sản Việt Nam đến thị trường của bạn với một nhà cung cấp đáng tin cậy.",
     "Become a Buyer": "Trở Thành Nhà Mua Hàng",
-
-    /* contact cta */
     "Let's work together": "Hãy hợp tác cùng nhau",
     "Ready to source with confidence?": "Sẵn sàng thu mua với sự tự tin?",
     "Tell us what you need and our team will respond with pricing and availability. Give us a chance to exceed your expectations.": "Hãy cho chúng tôi biết nhu cầu của bạn và đội ngũ của chúng tôi sẽ phản hồi với giá cả và tình trạng hàng. Hãy cho chúng tôi cơ hội vượt qua mong đợi của bạn.",
@@ -120,32 +113,21 @@
     "Hotline": "Đường Dây Nóng",
     "Headquarters": "Trụ Sở Chính",
     "Ho Chi Minh City, Vietnam": "Thành phố Hồ Chí Minh, Việt Nam",
-
-    /* footer */
     "Sourcing and exporting premium seafood and agricultural products to the world since 2002.": "Thu mua và xuất khẩu hải sản và nông sản cao cấp ra thế giới từ năm 2002.",
     "Explore": "Khám Phá",
     "Lot 4-6-8, 1A Street, Tan Tao Industrial Park, Tan Tao A Ward, Binh Tan, HCMC, Vietnam": "Lô 4-6-8, Đường 1A, KCN Tân Tạo, P. Tân Tạo A, Bình Tân, TP.HCM, Việt Nam",
     "© 2026 Gia Dai. All rights reserved.": "© 2026 Gia Dai. Bảo lưu mọi quyền.",
-    "Better than your expectations": "Tốt hơn mong đợi của bạn"
-  };
-
-  /* ---- additional strings: inner pages ---- */
-  Object.assign(VI, {
-    /* shared */
+    "Better than your expectations": "Tốt hơn mong đợi của bạn",
     "Talk to Sales": "Trao Đổi Với Bộ Phận Kinh Doanh",
     "Request a quote": "Yêu cầu báo giá",
     "View": "Xem",
     "products": "sản phẩm",
     "Quality & standards": "Chất lượng & tiêu chuẩn",
-
-    /* products page */
     "Product Range": "Dòng Sản Phẩm",
     "The full catalogue": "Toàn bộ danh mục",
     "Premium Vietnamese seafood and agricultural products across five categories, sourced direct and packed to your export specification. Pricing, pack sizes and minimums are available on enquiry.": "Hải sản và nông sản Việt Nam cao cấp thuộc năm danh mục, thu mua trực tiếp và đóng gói theo quy cách xuất khẩu của bạn. Giá cả, quy cách đóng gói và số lượng tối thiểu có sẵn khi liên hệ.",
     "Get the full price list & export specs": "Nhận bảng giá đầy đủ & thông số xuất khẩu",
     "Tell us your target products, volumes and destination port, and we will respond with pricing, pack details and lead times.": "Hãy cho chúng tôi biết sản phẩm, sản lượng và cảng đích của bạn, chúng tôi sẽ phản hồi với giá cả, chi tiết đóng gói và thời gian giao hàng.",
-
-    /* about page */
     "A privately owned import and export company, sourcing and supplying premium Vietnamese seafood and agricultural products for both domestic and international markets. We have built our name on three things: good price, good quality and good service.": "Công ty xuất nhập khẩu tư nhân, thu mua và cung cấp hải sản và nông sản Việt Nam cao cấp cho cả thị trường trong nước và quốc tế. Chúng tôi xây dựng tên tuổi của mình dựa trên ba điều: giá tốt, chất lượng tốt và dịch vụ tốt.",
     "Our Story": "Câu Chuyện Của Chúng Tôi",
     "From the Mekong Delta to the world": "Từ Đồng bằng sông Cửu Long ra thế giới",
@@ -180,8 +162,6 @@
     "Become a buyer": "Trở thành nhà mua hàng",
     "Let's build a lasting supply": "Cùng xây dựng nguồn cung lâu dài",
     "Open an account and source premium Vietnamese seafood and produce, with pricing, specs and lead times to match.": "Mở tài khoản và thu mua hải sản và nông sản Việt Nam cao cấp, kèm giá cả, thông số và thời gian giao hàng phù hợp.",
-
-    /* certifications page */
     "How we protect quality": "Cách chúng tôi bảo vệ chất lượng",
     "Standards we work to": "Tiêu chuẩn chúng tôi tuân thủ",
     "Quality runs through everything we do, from the farms and fisheries we buy from to the container we load. We have been a registered importer to the United States since 2012, and we stand behind every order to keep buyers confident in what they receive.": "Chất lượng hiện diện trong mọi việc chúng tôi làm, từ các trang trại và ngư trường chúng tôi thu mua đến container chúng tôi đóng hàng. Chúng tôi là nhà nhập khẩu đăng ký tại Hoa Kỳ từ năm 2012, và đứng sau mọi đơn hàng để người mua luôn tin tưởng vào những gì họ nhận được.",
@@ -214,8 +194,6 @@
     "Source with confidence": "Thu mua với sự tự tin",
     "Quality you can taste, supply you can trust": "Chất lượng cảm nhận được, nguồn cung đáng tin",
     "Open an account and source premium Vietnamese seafood and produce backed by two decades of experience.": "Mở tài khoản và thu mua hải sản và nông sản Việt Nam cao cấp được hậu thuẫn bởi hai thập kỷ kinh nghiệm.",
-
-    /* wholesale page */
     "Wholesale & Export": "Bán Sỉ & Xuất Khẩu",
     "We supply importers, distributors, supermarkets and foodservice groups with premium Vietnamese seafood and agricultural products, packed to your specification and shipped from Ho Chi Minh City.": "Chúng tôi cung cấp cho các nhà nhập khẩu, nhà phân phối, siêu thị và đơn vị dịch vụ ẩm thực hải sản và nông sản Việt Nam cao cấp, đóng gói theo quy cách của bạn và giao từ Thành phố Hồ Chí Minh.",
     "Why buy from us": "Vì sao mua từ chúng tôi",
@@ -230,7 +208,6 @@
     "Pack sizes, grading, labelling and Incoterms tailored to your destination and channel.": "Quy cách đóng gói, phân loại, nhãn mác và điều kiện Incoterms phù hợp với điểm đến và kênh phân phối của bạn.",
     "How it works": "Quy trình",
     "From enquiry to container": "Từ yêu cầu đến container",
-    "Enquire": "Liên hệ",
     "Send your target products, volumes and destination port.": "Gửi sản phẩm, sản lượng và cảng đích bạn mong muốn.",
     "Quote & samples": "Báo giá & mẫu",
     "We reply with pricing, specs, lead times and samples on request.": "Chúng tôi phản hồi với giá cả, thông số, thời gian giao hàng và mẫu khi có yêu cầu.",
@@ -256,8 +233,6 @@
     "e.g. 2 x 40ft / month": "vd: 2 x 40ft / tháng",
     "Destination port, packing, labelling, timelines…": "Cảng đích, đóng gói, nhãn mác, thời gian…",
     "Thanks, your enquiry has been received. Our export team will be in touch within one business day.": "Cảm ơn bạn, yêu cầu của bạn đã được tiếp nhận. Đội ngũ xuất khẩu của chúng tôi sẽ liên hệ trong vòng một ngày làm việc.",
-
-    /* contact page */
     "Talk to our team": "Trao đổi với đội ngũ của chúng tôi",
     "Phone": "Điện thoại",
     "Head office": "Văn phòng chính",
@@ -272,8 +247,6 @@
     "How can we help?": "Chúng tôi có thể giúp gì cho bạn?",
     "Send Message": "Gửi Tin Nhắn",
     "Thanks, your message has been received. We'll reply within one business day.": "Cảm ơn bạn, tin nhắn của bạn đã được tiếp nhận. Chúng tôi sẽ phản hồi trong vòng một ngày làm việc.",
-
-    /* product detail page */
     "More from this range": "Thêm từ dòng sản phẩm này",
     "Related products": "Sản phẩm liên quan",
     "Interested in this product?": "Quan tâm đến sản phẩm này?",
@@ -285,11 +258,998 @@
     "Minimum order": "Số lượng tối thiểu",
     "United States, domestic & international": "Hoa Kỳ, nội địa & quốc tế",
     "On enquiry": "Theo yêu cầu"
-  });
+  };
+
+  /* ---------------------------------------------------------- KOREAN */
+  DICT.ko = {
+    "Premium Vietnamese Seafood & Agricultural Export · Since 2002": "프리미엄 베트남 수산물 & 농산물 수출 · 2002년부터",
+    "Home": "홈",
+    "Products": "제품",
+    "Quality": "품질",
+    "Wholesale": "도매",
+    "About": "회사 소개",
+    "About Us": "회사 소개",
+    "About Us ": "회사 소개",
+    "Contact": "문의하기",
+    "Request a Quote": "견적 요청",
+    "Search products…": "제품 검색…",
+    "Seafood & Agricultural Export": "수산물 & 농산물 수출",
+    "From the Mekong": "메콩강에서",
+    "to the world.": "세계로.",
+    "Premium Vietnamese Seafood & Agriculture · Since 2002": "프리미엄 베트남 수산물 & 농산물 · 2002년부터",
+    "We source and export premium Vietnamese seafood and agricultural products, from frozen and dried seafood to prepared foods, shipping direct from Ho Chi Minh City to importers worldwide.": "당사는 냉동 및 건조 수산물부터 가공식품까지 프리미엄 베트남 수산물과 농산물을 조달·수출하며, 호치민시에서 전 세계 수입업체로 직접 배송합니다.",
+    "Browse Catalogue": "카탈로그 보기",
+    "Your Vietnamese food specialist": "당신의 베트남 식품 전문가",
+    "A privately owned import and export company supplying premium Vietnamese seafood and agricultural products from Ho Chi Minh City to markets at home and abroad. More than twenty years on, our promise is simple: good price, good quality, good service.": "호치민시에서 국내외 시장에 프리미엄 베트남 수산물과 농산물을 공급하는 민간 수출입 기업입니다. 20여 년이 지난 지금도 우리의 약속은 간단합니다: 좋은 가격, 좋은 품질, 좋은 서비스.",
+    "Cold-Chain Logistics": "콜드체인 물류",
+    "Temperature-controlled handling and shipping keep frozen and chilled lines at peak condition, port to port.": "온도 관리 취급 및 운송으로 냉동·냉장 제품을 항구에서 항구까지 최상의 상태로 유지합니다.",
+    "Direct Sourcing & Export": "직접 조달 & 수출",
+    "Bought straight from trusted Vietnamese farms and fisheries, then shipped worldwide with full documentation.": "신뢰할 수 있는 베트남 농장과 어장에서 직접 매입하여 완전한 서류와 함께 전 세계로 배송합니다.",
+    "Est. Since": "설립 연도",
+    "Seafood": "수산물",
+    "Premium Seafood": "프리미엄 수산물",
+    "Frozen and dried shrimp, fish, squid and crab from Vietnam's coast and the Mekong Delta.": "베트남 해안과 메콩 삼각주에서 온 냉동·건조 새우, 생선, 오징어, 게.",
+    "Agriculture": "농산물",
+    "Agricultural Products": "농산물 제품",
+    "Frozen and dried agricultural goods, from chili and okra to jackfruit, nuts and coconut.": "고추와 오크라부터 잭프루트, 견과류, 코코넛까지 냉동·건조 농산물.",
+    "Food": "식품",
+    "Prepared Food": "가공식품",
+    "Ready-to-cook Vietnamese specialities and value-added dishes, packed for export.": "바로 조리 가능한 베트남 특산 요리와 부가가치 제품, 수출용 포장.",
+    "Product Portfolio": "제품 포트폴리오",
+    "Explore our categories": "카테고리 둘러보기",
+    "View full catalogue": "전체 카탈로그 보기",
+    "frozen fresh seafood": "냉동 신선 수산물",
+    "dried seafood": "건조 수산물",
+    "frozen fresh agricultural": "냉동 신선 농산물",
+    "dried agricultural": "건조 농산물",
+    "prepared food": "가공식품",
+    "exotic dried fruit": "이국적인 건조 과일",
+    "Frozen Fresh Seafood": "냉동 신선 수산물",
+    "Dried Seafood": "건조 수산물",
+    "Frozen Fresh Agricultural": "냉동 신선 농산물",
+    "Dried Agricultural": "건조 농산물",
+    "Exotic Dried Fruit": "이국적인 건조 과일",
+    "Featured": "추천",
+    "Popular products": "인기 제품",
+    "View all": "전체 보기",
+    "Frozen": "냉동",
+    "Dried": "건조",
+    "Frozen Salted Crab": "냉동 소금게",
+    "Dried Gourami Fish": "건조 구라미 생선",
+    "Frozen Red Chili": "냉동 홍고추",
+    "Shrimp Spring Rolls": "새우 스프링롤",
+    "Export ready": "수출 준비 완료",
+    "Enquire": "문의하기",
+    "Quality You Can Trust": "신뢰할 수 있는 품질",
+    "Quality & Standards": "품질 & 기준",
+    "US Registered": "미국 등록",
+    "Importer since 2012": "2012년부터 수입업체",
+    "Cold Chain": "콜드체인",
+    "Temperature controlled": "온도 관리",
+    "Controlled Source": "관리된 공급원",
+    "Trusted farms": "신뢰할 수 있는 농장",
+    "Traceable": "추적 가능",
+    "Lot-level records": "로트 단위 기록",
+    "Inspected": "검사 완료",
+    "Every batch": "모든 배치",
+    "20+ Years": "20년 이상",
+    "Since 2002": "2002년부터",
+    "Export Ready": "수출 준비 완료",
+    "Full documentation": "완전한 서류",
+    "See All": "전체 보기",
+    "Our standards": "당사의 기준",
+    "Export Catalogue": "수출 카탈로그",
+    "Product Catalogue": "제품 카탈로그",
+    "Browse our full range of Vietnamese seafood and agricultural products, with pack sizes and export specs.": "포장 규격 및 수출 사양과 함께 당사의 베트남 수산물·농산물 전 제품을 둘러보세요.",
+    "Request Now": "지금 요청",
+    "Partner With Us?": "함께하시겠습니까?",
+    "Bring the richness of Vietnamese seafood and produce to your market with a supplier you can rely on.": "신뢰할 수 있는 공급업체와 함께 베트남 수산물과 농산물의 풍부함을 귀사의 시장에 전하세요.",
+    "Become a Buyer": "바이어 되기",
+    "Let's work together": "함께 협력합시다",
+    "Ready to source with confidence?": "자신 있게 조달할 준비가 되셨나요?",
+    "Tell us what you need and our team will respond with pricing and availability. Give us a chance to exceed your expectations.": "필요하신 사항을 알려주시면 당사 팀이 가격과 재고 상황을 회신해 드립니다. 기대를 뛰어넘을 기회를 주십시오.",
+    "Email Us": "이메일 보내기",
+    "Get in touch": "문의하기",
+    "Hotline": "핫라인",
+    "Headquarters": "본사",
+    "Ho Chi Minh City, Vietnam": "베트남 호치민시",
+    "Sourcing and exporting premium seafood and agricultural products to the world since 2002.": "2002년부터 프리미엄 수산물과 농산물을 조달하여 전 세계로 수출합니다.",
+    "Explore": "둘러보기",
+    "Lot 4-6-8, 1A Street, Tan Tao Industrial Park, Tan Tao A Ward, Binh Tan, HCMC, Vietnam": "베트남 호치민시 빈딴군 떤따오A동 떤따오 산업단지 1A로 4-6-8번지",
+    "© 2026 Gia Dai. All rights reserved.": "© 2026 Gia Dai. 모든 권리 보유.",
+    "Better than your expectations": "기대 이상의 만족",
+    "Talk to Sales": "영업팀에 문의",
+    "Request a quote": "견적 요청",
+    "View": "보기",
+    "products": "제품",
+    "Quality & standards": "품질 & 기준",
+    "Product Range": "제품 종류",
+    "The full catalogue": "전체 카탈로그",
+    "Premium Vietnamese seafood and agricultural products across five categories, sourced direct and packed to your export specification. Pricing, pack sizes and minimums are available on enquiry.": "다섯 가지 카테고리에 걸친 프리미엄 베트남 수산물·농산물을 직접 조달하여 귀사의 수출 사양에 맞춰 포장합니다. 가격, 포장 규격 및 최소 수량은 문의 시 제공됩니다.",
+    "Get the full price list & export specs": "전체 가격표 & 수출 사양 받기",
+    "Tell us your target products, volumes and destination port, and we will respond with pricing, pack details and lead times.": "원하시는 제품, 물량, 도착항을 알려주시면 가격, 포장 세부사항, 리드타임을 회신해 드립니다.",
+    "A privately owned import and export company, sourcing and supplying premium Vietnamese seafood and agricultural products for both domestic and international markets. We have built our name on three things: good price, good quality and good service.": "국내외 시장을 위해 프리미엄 베트남 수산물과 농산물을 조달·공급하는 민간 수출입 기업입니다. 우리는 세 가지로 이름을 쌓아왔습니다: 좋은 가격, 좋은 품질, 좋은 서비스.",
+    "Our Story": "우리의 이야기",
+    "From the Mekong Delta to the world": "메콩 삼각주에서 세계로",
+    "Founded in 2002, Gia Dai has spent more than two decades sourcing and supplying Vietnamese seafood and agricultural products. We buy direct from trusted producers and ship to customers at home and overseas.": "2002년에 설립된 Gia Dai는 20여 년간 베트남 수산물과 농산물을 조달·공급해 왔습니다. 신뢰할 수 있는 생산자로부터 직접 매입하여 국내외 고객에게 배송합니다.",
+    "We work with green farms and fisheries where strict standards keep antibiotics and disease under control, so the products we ship are clean, safe and consistent. In 2012 we became a registered importer to the United States, opening the door to demanding international buyers.": "항생제와 질병을 엄격한 기준으로 관리하는 친환경 농장 및 어장과 협력하여, 당사가 배송하는 제품은 깨끗하고 안전하며 일관됩니다. 2012년에는 미국 등록 수입업체가 되어 까다로운 국제 바이어에게 문을 열었습니다.",
+    "Established": "설립",
+    "Years experience": "년 경력",
+    "Product categories": "제품 카테고리",
+    "Products supplied": "공급 제품",
+    "Why Gia Dai": "왜 Gia Dai인가",
+    "01 · Good Price": "01 · 좋은 가격",
+    "02 · Good Quality": "02 · 좋은 품질",
+    "03 · Good Service": "03 · 좋은 서비스",
+    "Direct value": "직접적인 가치",
+    "Buying direct and keeping our overheads lean keeps our pricing competitive for buyers of every size.": "직접 매입과 효율적인 운영으로 모든 규모의 바이어에게 경쟁력 있는 가격을 제공합니다.",
+    "Clean & safe": "깨끗하고 안전한",
+    "Controlled sourcing and an unbroken cold chain protect quality from the farm to the container.": "관리된 조달과 끊김 없는 콜드체인이 농장에서 컨테이너까지 품질을 지킵니다.",
+    "Reliable": "신뢰성",
+    "Consistent supply, clear export documentation and a team that responds quickly.": "일관된 공급, 명확한 수출 서류, 신속하게 대응하는 팀.",
+    "Milestones": "주요 연혁",
+    "How we grew": "성장 과정",
+    "Founded in Ho Chi Minh City": "호치민시에서 설립",
+    "Began sourcing and trading Vietnamese seafood and agricultural products.": "베트남 수산물과 농산물 조달 및 거래를 시작했습니다.",
+    "Registered US importer": "미국 등록 수입업체",
+    "Became a legal importer to the United States, reaching demanding international buyers.": "미국 합법 수입업체가 되어 까다로운 국제 바이어에게 다가갔습니다.",
+    "20+ yrs": "20년+",
+    "Two decades on": "20년의 발자취",
+    "A trusted supplier across five categories of seafood and agricultural products.": "다섯 가지 수산물·농산물 카테고리에서 신뢰받는 공급업체.",
+    "Today": "오늘날",
+    "Growing worldwide": "전 세계로 성장",
+    "Supplying domestic and international markets, and welcoming new wholesale partners.": "국내외 시장에 공급하며 새로운 도매 파트너를 환영합니다.",
+    "Become a buyer": "바이어 되기",
+    "Let's build a lasting supply": "지속 가능한 공급을 함께 구축합시다",
+    "Open an account and source premium Vietnamese seafood and produce, with pricing, specs and lead times to match.": "계정을 개설하고 가격, 사양, 리드타임에 맞춰 프리미엄 베트남 수산물과 농산물을 조달하세요.",
+    "How we protect quality": "품질을 지키는 방법",
+    "Standards we work to": "당사가 준수하는 기준",
+    "Quality runs through everything we do, from the farms and fisheries we buy from to the container we load. We have been a registered importer to the United States since 2012, and we stand behind every order to keep buyers confident in what they receive.": "품질은 매입하는 농장과 어장부터 적재하는 컨테이너까지 우리의 모든 일에 깃들어 있습니다. 2012년부터 미국 등록 수입업체로서 모든 주문을 책임지며 바이어가 받는 제품에 확신을 갖도록 합니다.",
+    "Monitored farms & fisheries": "모니터링되는 농장 & 어장",
+    "Quality checks each batch": "배치별 품질 검사",
+    "Experience since 2002": "2002년부터의 경험",
+    "Full export documentation": "완전한 수출 서류",
+    "Reliable Supply": "안정적인 공급",
+    "Consistent volumes": "일관된 물량",
+    "Our supply chain": "당사의 공급망",
+    "Cold chain you can rely on": "신뢰할 수 있는 콜드체인",
+    "From source to container, every order is kept in a temperature-controlled, fully traceable cold chain on its way to your port.": "공급원에서 컨테이너까지, 모든 주문은 귀사의 항구로 가는 동안 온도 관리되고 완전히 추적 가능한 콜드체인에서 유지됩니다.",
+    "Cold-Chain Handling": "콜드체인 취급",
+    "Frozen and chilled lines stay temperature-controlled from source through to export.": "냉동·냉장 제품은 공급원에서 수출까지 온도 관리됩니다.",
+    "Full Traceability": "완전한 추적성",
+    "Lot-level documentation follows each order from source through to export.": "로트 단위 서류가 공급원에서 수출까지 각 주문을 따라갑니다.",
+    "Our promise": "우리의 약속",
+    "Fair, direct": "공정하고 직접적인",
+    "Buying direct and keeping our overheads lean lets us keep pricing competitive without cutting corners.": "직접 매입과 효율적인 운영으로 품질 타협 없이 경쟁력 있는 가격을 유지합니다.",
+    "Consistent": "일관성",
+    "Careful cold-chain handling and inspection protect quality in every shipment we send.": "세심한 콜드체인 취급과 검사가 모든 출하 품질을 보호합니다.",
+    "Dependable": "믿을 수 있는",
+    "Clear documentation, reliable supply and a team that answers when you need it.": "명확한 서류, 안정적인 공급, 필요할 때 응답하는 팀.",
+    "Where we ship": "배송 지역",
+    "From source to your market": "공급원에서 귀사의 시장까지",
+    "We supply the domestic Vietnamese market and export internationally, with United States import registration in place since 2012. Tell us your destination port and we will confirm specs, pricing and lead times.": "당사는 베트남 국내 시장에 공급하고 국제적으로 수출하며, 2012년부터 미국 수입 등록을 보유하고 있습니다. 도착항을 알려주시면 사양, 가격, 리드타임을 확인해 드립니다.",
+    "United States": "미국",
+    "Domestic Vietnam": "베트남 국내",
+    "International markets": "국제 시장",
+    "Source with confidence": "자신 있게 조달하세요",
+    "Quality you can taste, supply you can trust": "맛으로 느끼는 품질, 믿을 수 있는 공급",
+    "Open an account and source premium Vietnamese seafood and produce backed by two decades of experience.": "계정을 개설하고 20년 경험으로 뒷받침되는 프리미엄 베트남 수산물과 농산물을 조달하세요.",
+    "Wholesale & Export": "도매 & 수출",
+    "We supply importers, distributors, supermarkets and foodservice groups with premium Vietnamese seafood and agricultural products, packed to your specification and shipped from Ho Chi Minh City.": "당사는 수입업체, 유통업체, 슈퍼마켓, 외식 기업에 프리미엄 베트남 수산물과 농산물을 귀사의 사양에 맞춰 포장하여 호치민시에서 공급합니다.",
+    "Why buy from us": "당사를 선택하는 이유",
+    "One trusted supplier": "하나의 신뢰할 수 있는 공급업체",
+    "01 · Range": "01 · 다양성",
+    "02 · Quality": "02 · 품질",
+    "03 · Flexible": "03 · 유연성",
+    "Five categories": "다섯 가지 카테고리",
+    "Seafood, agriculture and prepared food in one supplier, so you can consolidate your Vietnamese sourcing.": "수산물, 농산물, 가공식품을 한 공급업체에서 제공하여 베트남 조달을 통합할 수 있습니다.",
+    "Cold-chain handling, controlled sourcing and careful inspection, with the documentation your market needs.": "콜드체인 취급, 관리된 조달, 세심한 검사, 그리고 귀사의 시장이 필요로 하는 서류.",
+    "Your spec": "귀사의 사양",
+    "Pack sizes, grading, labelling and Incoterms tailored to your destination and channel.": "도착지와 유통 채널에 맞춘 포장 규격, 등급 분류, 라벨링 및 인코텀즈.",
+    "How it works": "진행 방식",
+    "From enquiry to container": "문의에서 컨테이너까지",
+    "Send your target products, volumes and destination port.": "원하시는 제품, 물량, 도착항을 보내주세요.",
+    "Quote & samples": "견적 & 샘플",
+    "We reply with pricing, specs, lead times and samples on request.": "요청 시 가격, 사양, 리드타임, 샘플을 회신해 드립니다.",
+    "Confirm order": "주문 확정",
+    "Agree pack, labelling and Incoterms, then we schedule sourcing and shipment.": "포장, 라벨링, 인코텀즈를 합의한 후 조달과 출하 일정을 잡습니다.",
+    "Ship & document": "출하 & 서류",
+    "Cold-chain export with full documentation to your port.": "완전한 서류와 함께 귀사 항구로 콜드체인 수출.",
+    "Tell us what you need": "필요하신 사항을 알려주세요",
+    "Share your requirements and we will respond with pricing and availability, usually within one business day.": "요구사항을 공유해 주시면 보통 영업일 기준 하루 이내에 가격과 재고 상황을 회신해 드립니다.",
+    "What you'll get": "받으시게 될 것",
+    "Product specs and pack configurations": "제품 사양 및 포장 구성",
+    "FOB or CIF pricing for your port": "귀사 항구에 대한 FOB 또는 CIF 가격",
+    "Lead times and minimum order quantities": "리드타임 및 최소 주문 수량",
+    "Company": "회사",
+    "Country / market": "국가 / 시장",
+    "Contact name": "담당자 이름",
+    "Products of interest": "관심 제품",
+    "Estimated volume": "예상 물량",
+    "Details": "세부사항",
+    "Send Enquiry": "문의 보내기",
+    "Multiple / not sure yet": "여러 가지 / 아직 미정",
+    "Not sure": "미정",
+    "e.g. 2 x 40ft / month": "예: 월 2 x 40ft",
+    "Destination port, packing, labelling, timelines…": "도착항, 포장, 라벨링, 일정…",
+    "Thanks, your enquiry has been received. Our export team will be in touch within one business day.": "감사합니다. 문의가 접수되었습니다. 당사 수출팀이 영업일 기준 하루 이내에 연락드리겠습니다.",
+    "Talk to our team": "당사 팀과 상담하기",
+    "Phone": "전화",
+    "Head office": "본사",
+    "Lot 4-6-8, 1A Street, Tan Tao Industrial Park,": "떤따오 산업단지 1A로 4-6-8번지,",
+    "Tan Tao A Ward, Binh Tan District, Ho Chi Minh City, Vietnam": "베트남 호치민시 빈딴군 떤따오A동",
+    "Name": "이름",
+    "Subject": "제목",
+    "Message": "메시지",
+    "Pricing & availability": "가격 & 재고",
+    "Product samples": "제품 샘플",
+    "General enquiry": "일반 문의",
+    "How can we help?": "무엇을 도와드릴까요?",
+    "Send Message": "메시지 보내기",
+    "Thanks, your message has been received. We'll reply within one business day.": "감사합니다. 메시지가 접수되었습니다. 영업일 기준 하루 이내에 답변드리겠습니다.",
+    "More from this range": "이 제품군의 더 보기",
+    "Related products": "관련 제품",
+    "Interested in this product?": "이 제품에 관심이 있으신가요?",
+    "Category": "카테고리",
+    "Vietnamese name": "베트남어 명칭",
+    "Packaging": "포장",
+    "Availability": "재고 상황",
+    "Markets": "시장",
+    "Minimum order": "최소 주문",
+    "United States, domestic & international": "미국, 국내 & 국제",
+    "On enquiry": "문의 시"
+  };
+  /* ---------------------------------------------------------- FRENCH */
+  DICT.fr = {
+    "Premium Vietnamese Seafood & Agricultural Export · Since 2002": "Export de Produits de la Mer & Agricoles Vietnamiens Premium · Depuis 2002",
+    "Home": "Accueil",
+    "Products": "Produits",
+    "Quality": "Qualité",
+    "Wholesale": "Vente en Gros",
+    "About": "À Propos",
+    "About Us": "À Propos de Nous",
+    "About Us ": "À Propos de Nous",
+    "Contact": "Contact",
+    "Request a Quote": "Demander un Devis",
+    "Search products…": "Rechercher des produits…",
+    "Seafood & Agricultural Export": "Export de Produits de la Mer & Agricoles",
+    "From the Mekong": "Du Mékong",
+    "to the world.": "au monde entier.",
+    "Premium Vietnamese Seafood & Agriculture · Since 2002": "Produits de la Mer & Agricoles Vietnamiens Premium · Depuis 2002",
+    "We source and export premium Vietnamese seafood and agricultural products, from frozen and dried seafood to prepared foods, shipping direct from Ho Chi Minh City to importers worldwide.": "Nous sourçons et exportons des produits de la mer et agricoles vietnamiens premium, des fruits de mer surgelés et séchés aux plats préparés, expédiés directement de Hô Chi Minh-Ville vers les importateurs du monde entier.",
+    "Browse Catalogue": "Voir le Catalogue",
+    "Your Vietnamese food specialist": "Votre spécialiste des produits alimentaires vietnamiens",
+    "A privately owned import and export company supplying premium Vietnamese seafood and agricultural products from Ho Chi Minh City to markets at home and abroad. More than twenty years on, our promise is simple: good price, good quality, good service.": "Une entreprise privée d'import-export fournissant des produits de la mer et agricoles vietnamiens premium depuis Hô Chi Minh-Ville vers les marchés nationaux et internationaux. Plus de vingt ans après, notre promesse reste simple : bon prix, bonne qualité, bon service.",
+    "Cold-Chain Logistics": "Logistique de la Chaîne du Froid",
+    "Temperature-controlled handling and shipping keep frozen and chilled lines at peak condition, port to port.": "Une manutention et un transport à température contrôlée maintiennent les produits surgelés et réfrigérés dans un état optimal, de port à port.",
+    "Direct Sourcing & Export": "Sourcing & Export Directs",
+    "Bought straight from trusted Vietnamese farms and fisheries, then shipped worldwide with full documentation.": "Achetés directement auprès de fermes et pêcheries vietnamiennes de confiance, puis expédiés dans le monde entier avec une documentation complète.",
+    "Est. Since": "Fondée en",
+    "Seafood": "Produits de la Mer",
+    "Premium Seafood": "Produits de la Mer Premium",
+    "Frozen and dried shrimp, fish, squid and crab from Vietnam's coast and the Mekong Delta.": "Crevettes, poissons, calmars et crabes surgelés et séchés, issus du littoral vietnamien et du delta du Mékong.",
+    "Agriculture": "Agriculture",
+    "Agricultural Products": "Produits Agricoles",
+    "Frozen and dried agricultural goods, from chili and okra to jackfruit, nuts and coconut.": "Produits agricoles surgelés et séchés, du piment et du gombo au jacquier, aux fruits à coque et à la noix de coco.",
+    "Food": "Alimentaire",
+    "Prepared Food": "Plats Préparés",
+    "Ready-to-cook Vietnamese specialities and value-added dishes, packed for export.": "Spécialités vietnamiennes prêtes à cuire et plats à valeur ajoutée, conditionnés pour l'export.",
+    "Product Portfolio": "Gamme de Produits",
+    "Explore our categories": "Découvrez nos catégories",
+    "View full catalogue": "Voir le catalogue complet",
+    "frozen fresh seafood": "produits de la mer frais surgelés",
+    "dried seafood": "produits de la mer séchés",
+    "frozen fresh agricultural": "produits agricoles frais surgelés",
+    "dried agricultural": "produits agricoles séchés",
+    "prepared food": "plats préparés",
+    "exotic dried fruit": "fruits séchés exotiques",
+    "Frozen Fresh Seafood": "Produits de la Mer Frais Surgelés",
+    "Dried Seafood": "Produits de la Mer Séchés",
+    "Frozen Fresh Agricultural": "Produits Agricoles Frais Surgelés",
+    "Dried Agricultural": "Produits Agricoles Séchés",
+    "Exotic Dried Fruit": "Fruits Séchés Exotiques",
+    "Featured": "En Vedette",
+    "Popular products": "Produits populaires",
+    "View all": "Voir tout",
+    "Frozen": "Surgelé",
+    "Dried": "Séché",
+    "Frozen Salted Crab": "Crabe Salé Surgelé",
+    "Dried Gourami Fish": "Gourami Séché",
+    "Frozen Red Chili": "Piment Rouge Surgelé",
+    "Shrimp Spring Rolls": "Rouleaux de Printemps aux Crevettes",
+    "Export ready": "Prêt à l'export",
+    "Enquire": "Demander",
+    "Quality You Can Trust": "Une Qualité de Confiance",
+    "Quality & Standards": "Qualité & Normes",
+    "US Registered": "Enregistré aux É.-U.",
+    "Importer since 2012": "Importateur depuis 2012",
+    "Cold Chain": "Chaîne du Froid",
+    "Temperature controlled": "Température contrôlée",
+    "Controlled Source": "Source Contrôlée",
+    "Trusted farms": "Fermes de confiance",
+    "Traceable": "Traçable",
+    "Lot-level records": "Suivi par lot",
+    "Inspected": "Inspecté",
+    "Every batch": "Chaque lot",
+    "20+ Years": "20+ Ans",
+    "Since 2002": "Depuis 2002",
+    "Export Ready": "Prêt à l'Export",
+    "Full documentation": "Documentation complète",
+    "See All": "Voir Tout",
+    "Our standards": "Nos normes",
+    "Export Catalogue": "Catalogue d'Export",
+    "Product Catalogue": "Catalogue Produits",
+    "Browse our full range of Vietnamese seafood and agricultural products, with pack sizes and export specs.": "Parcourez notre gamme complète de produits de la mer et agricoles vietnamiens, avec conditionnements et spécifications d'export.",
+    "Request Now": "Demander Maintenant",
+    "Partner With Us?": "Devenir Partenaire ?",
+    "Bring the richness of Vietnamese seafood and produce to your market with a supplier you can rely on.": "Apportez la richesse des produits de la mer et agricoles vietnamiens à votre marché avec un fournisseur de confiance.",
+    "Become a Buyer": "Devenir Acheteur",
+    "Let's work together": "Travaillons ensemble",
+    "Ready to source with confidence?": "Prêt à vous approvisionner en toute confiance ?",
+    "Tell us what you need and our team will respond with pricing and availability. Give us a chance to exceed your expectations.": "Dites-nous ce dont vous avez besoin et notre équipe vous répondra avec les prix et la disponibilité. Donnez-nous l'occasion de dépasser vos attentes.",
+    "Email Us": "Nous Écrire",
+    "Get in touch": "Nous Contacter",
+    "Hotline": "Ligne Directe",
+    "Headquarters": "Siège Social",
+    "Ho Chi Minh City, Vietnam": "Hô Chi Minh-Ville, Vietnam",
+    "Sourcing and exporting premium seafood and agricultural products to the world since 2002.": "Sourcing et export de produits de la mer et agricoles premium dans le monde entier depuis 2002.",
+    "Explore": "Explorer",
+    "Lot 4-6-8, 1A Street, Tan Tao Industrial Park, Tan Tao A Ward, Binh Tan, HCMC, Vietnam": "Lot 4-6-8, Rue 1A, Parc Industriel de Tan Tao, Quartier Tan Tao A, Binh Tan, HCMV, Vietnam",
+    "© 2026 Gia Dai. All rights reserved.": "© 2026 Gia Dai. Tous droits réservés.",
+    "Better than your expectations": "Au-delà de vos attentes",
+    "Talk to Sales": "Parler aux Ventes",
+    "Request a quote": "Demander un devis",
+    "View": "Voir",
+    "products": "produits",
+    "Quality & standards": "Qualité & normes",
+    "Product Range": "Gamme de Produits",
+    "The full catalogue": "Le catalogue complet",
+    "Premium Vietnamese seafood and agricultural products across five categories, sourced direct and packed to your export specification. Pricing, pack sizes and minimums are available on enquiry.": "Produits de la mer et agricoles vietnamiens premium répartis en cinq catégories, sourcés en direct et conditionnés selon vos spécifications d'export. Prix, conditionnements et quantités minimales disponibles sur demande.",
+    "Get the full price list & export specs": "Obtenir la liste de prix complète & specs d'export",
+    "Tell us your target products, volumes and destination port, and we will respond with pricing, pack details and lead times.": "Indiquez-nous vos produits ciblés, volumes et port de destination, et nous vous répondrons avec les prix, les détails de conditionnement et les délais.",
+    "A privately owned import and export company, sourcing and supplying premium Vietnamese seafood and agricultural products for both domestic and international markets. We have built our name on three things: good price, good quality and good service.": "Une entreprise privée d'import-export, qui source et fournit des produits de la mer et agricoles vietnamiens premium pour les marchés nationaux et internationaux. Nous avons bâti notre réputation sur trois choses : bon prix, bonne qualité et bon service.",
+    "Our Story": "Notre Histoire",
+    "From the Mekong Delta to the world": "Du delta du Mékong au monde entier",
+    "Founded in 2002, Gia Dai has spent more than two decades sourcing and supplying Vietnamese seafood and agricultural products. We buy direct from trusted producers and ship to customers at home and overseas.": "Fondée en 2002, Gia Dai source et fournit des produits de la mer et agricoles vietnamiens depuis plus de deux décennies. Nous achetons directement auprès de producteurs de confiance et livrons des clients au pays comme à l'étranger.",
+    "We work with green farms and fisheries where strict standards keep antibiotics and disease under control, so the products we ship are clean, safe and consistent. In 2012 we became a registered importer to the United States, opening the door to demanding international buyers.": "Nous travaillons avec des fermes et pêcheries écologiques où des normes strictes contrôlent antibiotiques et maladies, de sorte que les produits que nous expédions sont propres, sûrs et constants. En 2012, nous sommes devenus importateur enregistré aux États-Unis, ouvrant la porte aux acheteurs internationaux exigeants.",
+    "Established": "Création",
+    "Years experience": "Ans d'expérience",
+    "Product categories": "Catégories de produits",
+    "Products supplied": "Produits fournis",
+    "Why Gia Dai": "Pourquoi Gia Dai",
+    "01 · Good Price": "01 · Bon Prix",
+    "02 · Good Quality": "02 · Bonne Qualité",
+    "03 · Good Service": "03 · Bon Service",
+    "Direct value": "Valeur directe",
+    "Buying direct and keeping our overheads lean keeps our pricing competitive for buyers of every size.": "L'achat en direct et des frais maîtrisés maintiennent nos prix compétitifs pour les acheteurs de toute taille.",
+    "Clean & safe": "Propre & sûr",
+    "Controlled sourcing and an unbroken cold chain protect quality from the farm to the container.": "Un sourcing contrôlé et une chaîne du froid ininterrompue protègent la qualité de la ferme au conteneur.",
+    "Reliable": "Fiable",
+    "Consistent supply, clear export documentation and a team that responds quickly.": "Un approvisionnement constant, une documentation d'export claire et une équipe qui répond vite.",
+    "Milestones": "Étapes Clés",
+    "How we grew": "Notre développement",
+    "Founded in Ho Chi Minh City": "Fondée à Hô Chi Minh-Ville",
+    "Began sourcing and trading Vietnamese seafood and agricultural products.": "Début du sourcing et du négoce de produits de la mer et agricoles vietnamiens.",
+    "Registered US importer": "Importateur enregistré aux É.-U.",
+    "Became a legal importer to the United States, reaching demanding international buyers.": "Devenue importateur légal aux États-Unis, atteignant des acheteurs internationaux exigeants.",
+    "20+ yrs": "20+ ans",
+    "Two decades on": "Deux décennies plus tard",
+    "A trusted supplier across five categories of seafood and agricultural products.": "Un fournisseur de confiance sur cinq catégories de produits de la mer et agricoles.",
+    "Today": "Aujourd'hui",
+    "Growing worldwide": "Une croissance mondiale",
+    "Supplying domestic and international markets, and welcoming new wholesale partners.": "Fournir les marchés nationaux et internationaux, et accueillir de nouveaux partenaires grossistes.",
+    "Become a buyer": "Devenir acheteur",
+    "Let's build a lasting supply": "Construisons un approvisionnement durable",
+    "Open an account and source premium Vietnamese seafood and produce, with pricing, specs and lead times to match.": "Ouvrez un compte et sourcez des produits de la mer et agricoles vietnamiens premium, avec prix, specs et délais adaptés.",
+    "How we protect quality": "Comment nous protégeons la qualité",
+    "Standards we work to": "Les normes que nous appliquons",
+    "Quality runs through everything we do, from the farms and fisheries we buy from to the container we load. We have been a registered importer to the United States since 2012, and we stand behind every order to keep buyers confident in what they receive.": "La qualité guide tout ce que nous faisons, des fermes et pêcheries où nous achetons au conteneur que nous chargeons. Importateur enregistré aux États-Unis depuis 2012, nous garantissons chaque commande pour que les acheteurs aient confiance en ce qu'ils reçoivent.",
+    "Monitored farms & fisheries": "Fermes & pêcheries surveillées",
+    "Quality checks each batch": "Contrôle qualité de chaque lot",
+    "Experience since 2002": "Expérience depuis 2002",
+    "Full export documentation": "Documentation d'export complète",
+    "Reliable Supply": "Approvisionnement Fiable",
+    "Consistent volumes": "Volumes constants",
+    "Our supply chain": "Notre chaîne d'approvisionnement",
+    "Cold chain you can rely on": "Une chaîne du froid fiable",
+    "From source to container, every order is kept in a temperature-controlled, fully traceable cold chain on its way to your port.": "De la source au conteneur, chaque commande est maintenue dans une chaîne du froid à température contrôlée et entièrement traçable jusqu'à votre port.",
+    "Cold-Chain Handling": "Manutention en Chaîne du Froid",
+    "Frozen and chilled lines stay temperature-controlled from source through to export.": "Les produits surgelés et réfrigérés restent à température contrôlée de la source jusqu'à l'export.",
+    "Full Traceability": "Traçabilité Complète",
+    "Lot-level documentation follows each order from source through to export.": "Une documentation par lot accompagne chaque commande de la source jusqu'à l'export.",
+    "Our promise": "Notre promesse",
+    "Fair, direct": "Juste, direct",
+    "Buying direct and keeping our overheads lean lets us keep pricing competitive without cutting corners.": "L'achat en direct et des frais maîtrisés nous permettent de rester compétitifs sans rogner sur la qualité.",
+    "Consistent": "Constant",
+    "Careful cold-chain handling and inspection protect quality in every shipment we send.": "Une manutention soignée en chaîne du froid et des inspections protègent la qualité de chaque expédition.",
+    "Dependable": "Fiable",
+    "Clear documentation, reliable supply and a team that answers when you need it.": "Une documentation claire, un approvisionnement fiable et une équipe qui répond quand vous en avez besoin.",
+    "Where we ship": "Où nous expédions",
+    "From source to your market": "De la source à votre marché",
+    "We supply the domestic Vietnamese market and export internationally, with United States import registration in place since 2012. Tell us your destination port and we will confirm specs, pricing and lead times.": "Nous fournissons le marché vietnamien national et exportons à l'international, avec un enregistrement d'import aux États-Unis depuis 2012. Indiquez votre port de destination et nous confirmerons specs, prix et délais.",
+    "United States": "États-Unis",
+    "Domestic Vietnam": "Vietnam (national)",
+    "International markets": "Marchés internationaux",
+    "Source with confidence": "Approvisionnez-vous en confiance",
+    "Quality you can taste, supply you can trust": "Une qualité qui se goûte, un approvisionnement fiable",
+    "Open an account and source premium Vietnamese seafood and produce backed by two decades of experience.": "Ouvrez un compte et sourcez des produits de la mer et agricoles vietnamiens premium, forts de deux décennies d'expérience.",
+    "Wholesale & Export": "Vente en Gros & Export",
+    "We supply importers, distributors, supermarkets and foodservice groups with premium Vietnamese seafood and agricultural products, packed to your specification and shipped from Ho Chi Minh City.": "Nous fournissons aux importateurs, distributeurs, supermarchés et groupes de restauration des produits de la mer et agricoles vietnamiens premium, conditionnés selon vos spécifications et expédiés de Hô Chi Minh-Ville.",
+    "Why buy from us": "Pourquoi acheter chez nous",
+    "One trusted supplier": "Un fournisseur de confiance",
+    "01 · Range": "01 · Gamme",
+    "02 · Quality": "02 · Qualité",
+    "03 · Flexible": "03 · Flexible",
+    "Five categories": "Cinq catégories",
+    "Seafood, agriculture and prepared food in one supplier, so you can consolidate your Vietnamese sourcing.": "Produits de la mer, agricoles et plats préparés chez un seul fournisseur, pour consolider votre sourcing vietnamien.",
+    "Cold-chain handling, controlled sourcing and careful inspection, with the documentation your market needs.": "Manutention en chaîne du froid, sourcing contrôlé et inspection soignée, avec la documentation requise par votre marché.",
+    "Your spec": "Votre cahier des charges",
+    "Pack sizes, grading, labelling and Incoterms tailored to your destination and channel.": "Conditionnements, calibrage, étiquetage et Incoterms adaptés à votre destination et à votre canal.",
+    "How it works": "Comment ça marche",
+    "From enquiry to container": "De la demande au conteneur",
+    "Send your target products, volumes and destination port.": "Envoyez vos produits ciblés, volumes et port de destination.",
+    "Quote & samples": "Devis & échantillons",
+    "We reply with pricing, specs, lead times and samples on request.": "Nous répondons avec prix, specs, délais et échantillons sur demande.",
+    "Confirm order": "Confirmer la commande",
+    "Agree pack, labelling and Incoterms, then we schedule sourcing and shipment.": "Validez conditionnement, étiquetage et Incoterms, puis nous planifions le sourcing et l'expédition.",
+    "Ship & document": "Expédition & documents",
+    "Cold-chain export with full documentation to your port.": "Export en chaîne du froid avec documentation complète jusqu'à votre port.",
+    "Tell us what you need": "Dites-nous ce dont vous avez besoin",
+    "Share your requirements and we will respond with pricing and availability, usually within one business day.": "Partagez vos besoins et nous vous répondrons avec prix et disponibilité, généralement sous un jour ouvré.",
+    "What you'll get": "Ce que vous recevrez",
+    "Product specs and pack configurations": "Specs produits et configurations de conditionnement",
+    "FOB or CIF pricing for your port": "Prix FOB ou CIF pour votre port",
+    "Lead times and minimum order quantities": "Délais et quantités minimales de commande",
+    "Company": "Société",
+    "Country / market": "Pays / marché",
+    "Contact name": "Nom du contact",
+    "Products of interest": "Produits qui vous intéressent",
+    "Estimated volume": "Volume estimé",
+    "Details": "Détails",
+    "Send Enquiry": "Envoyer la Demande",
+    "Multiple / not sure yet": "Plusieurs / pas encore sûr",
+    "Not sure": "Pas sûr",
+    "e.g. 2 x 40ft / month": "ex. 2 x 40ft / mois",
+    "Destination port, packing, labelling, timelines…": "Port de destination, conditionnement, étiquetage, délais…",
+    "Thanks, your enquiry has been received. Our export team will be in touch within one business day.": "Merci, votre demande a bien été reçue. Notre équipe export vous contactera sous un jour ouvré.",
+    "Talk to our team": "Parler à notre équipe",
+    "Phone": "Téléphone",
+    "Head office": "Siège",
+    "Lot 4-6-8, 1A Street, Tan Tao Industrial Park,": "Lot 4-6-8, Rue 1A, Parc Industriel de Tan Tao,",
+    "Tan Tao A Ward, Binh Tan District, Ho Chi Minh City, Vietnam": "Quartier Tan Tao A, District de Binh Tan, Hô Chi Minh-Ville, Vietnam",
+    "Name": "Nom",
+    "Subject": "Objet",
+    "Message": "Message",
+    "Pricing & availability": "Prix & disponibilité",
+    "Product samples": "Échantillons de produits",
+    "General enquiry": "Demande générale",
+    "How can we help?": "Comment pouvons-nous vous aider ?",
+    "Send Message": "Envoyer le Message",
+    "Thanks, your message has been received. We'll reply within one business day.": "Merci, votre message a bien été reçu. Nous vous répondrons sous un jour ouvré.",
+    "More from this range": "Plus de cette gamme",
+    "Related products": "Produits associés",
+    "Interested in this product?": "Ce produit vous intéresse ?",
+    "Category": "Catégorie",
+    "Vietnamese name": "Nom vietnamien",
+    "Packaging": "Conditionnement",
+    "Availability": "Disponibilité",
+    "Markets": "Marchés",
+    "Minimum order": "Commande minimale",
+    "United States, domestic & international": "États-Unis, national & international",
+    "On enquiry": "Sur demande"
+  };
+  /* ---------------------------------------------------------- JAPANESE */
+  DICT.ja = {
+    "Premium Vietnamese Seafood & Agricultural Export · Since 2002": "ベトナム産プレミアム水産物・農産物の輸出 · 2002年創業",
+    "Home": "ホーム",
+    "Products": "製品",
+    "Quality": "品質",
+    "Wholesale": "卸売",
+    "About": "会社概要",
+    "About Us": "私たちについて",
+    "About Us ": "私たちについて",
+    "Contact": "お問い合わせ",
+    "Request a Quote": "見積もり依頼",
+    "Search products…": "製品を検索…",
+    "Seafood & Agricultural Export": "水産物・農産物の輸出",
+    "From the Mekong": "メコンから",
+    "to the world.": "世界へ。",
+    "Premium Vietnamese Seafood & Agriculture · Since 2002": "ベトナム産プレミアム水産物・農産物 · 2002年創業",
+    "We source and export premium Vietnamese seafood and agricultural products, from frozen and dried seafood to prepared foods, shipping direct from Ho Chi Minh City to importers worldwide.": "当社は冷凍・乾燥水産物から調理済み食品まで、ベトナム産プレミアム水産物・農産物を調達・輸出し、ホーチミン市から世界中の輸入業者へ直送しています。",
+    "Browse Catalogue": "カタログを見る",
+    "Your Vietnamese food specialist": "あなたのベトナム食品スペシャリスト",
+    "A privately owned import and export company supplying premium Vietnamese seafood and agricultural products from Ho Chi Minh City to markets at home and abroad. More than twenty years on, our promise is simple: good price, good quality, good service.": "ホーチミン市から国内外の市場へベトナム産プレミアム水産物・農産物を供給する民間の輸出入企業です。創業から20年以上、私たちの約束はシンプルです：良い価格、良い品質、良いサービス。",
+    "Cold-Chain Logistics": "コールドチェーン物流",
+    "Temperature-controlled handling and shipping keep frozen and chilled lines at peak condition, port to port.": "温度管理された取り扱いと輸送により、冷凍・冷蔵品を港から港まで最良の状態で維持します。",
+    "Direct Sourcing & Export": "直接調達・輸出",
+    "Bought straight from trusted Vietnamese farms and fisheries, then shipped worldwide with full documentation.": "信頼できるベトナムの農場・漁場から直接仕入れ、完全な書類とともに世界中へ出荷します。",
+    "Est. Since": "創業",
+    "Seafood": "水産物",
+    "Premium Seafood": "プレミアム水産物",
+    "Frozen and dried shrimp, fish, squid and crab from Vietnam's coast and the Mekong Delta.": "ベトナム沿岸とメコンデルタ産の冷凍・乾燥エビ、魚、イカ、カニ。",
+    "Agriculture": "農産物",
+    "Agricultural Products": "農産物製品",
+    "Frozen and dried agricultural goods, from chili and okra to jackfruit, nuts and coconut.": "唐辛子やオクラからジャックフルーツ、ナッツ、ココナッツまで、冷凍・乾燥農産物。",
+    "Food": "食品",
+    "Prepared Food": "調理済み食品",
+    "Ready-to-cook Vietnamese specialities and value-added dishes, packed for export.": "すぐに調理できるベトナムの特産料理と付加価値商品を、輸出用に包装。",
+    "Product Portfolio": "製品ラインナップ",
+    "Explore our categories": "カテゴリーを見る",
+    "View full catalogue": "全カタログを見る",
+    "frozen fresh seafood": "冷凍生鮮水産物",
+    "dried seafood": "乾燥水産物",
+    "frozen fresh agricultural": "冷凍生鮮農産物",
+    "dried agricultural": "乾燥農産物",
+    "prepared food": "調理済み食品",
+    "exotic dried fruit": "エキゾチックドライフルーツ",
+    "Frozen Fresh Seafood": "冷凍生鮮水産物",
+    "Dried Seafood": "乾燥水産物",
+    "Frozen Fresh Agricultural": "冷凍生鮮農産物",
+    "Dried Agricultural": "乾燥農産物",
+    "Exotic Dried Fruit": "エキゾチックドライフルーツ",
+    "Featured": "おすすめ",
+    "Popular products": "人気製品",
+    "View all": "すべて見る",
+    "Frozen": "冷凍",
+    "Dried": "乾燥",
+    "Frozen Salted Crab": "冷凍塩漬けガニ",
+    "Dried Gourami Fish": "乾燥グラミー",
+    "Frozen Red Chili": "冷凍赤唐辛子",
+    "Shrimp Spring Rolls": "エビ春巻き",
+    "Export ready": "輸出対応可",
+    "Enquire": "問い合わせ",
+    "Quality You Can Trust": "信頼できる品質",
+    "Quality & Standards": "品質・基準",
+    "US Registered": "米国登録済み",
+    "Importer since 2012": "2012年より輸入業者",
+    "Cold Chain": "コールドチェーン",
+    "Temperature controlled": "温度管理",
+    "Controlled Source": "管理された供給源",
+    "Trusted farms": "信頼できる農場",
+    "Traceable": "追跡可能",
+    "Lot-level records": "ロット単位の記録",
+    "Inspected": "検査済み",
+    "Every batch": "全ロット",
+    "20+ Years": "20年以上",
+    "Since 2002": "2002年より",
+    "Export Ready": "輸出対応可",
+    "Full documentation": "完全な書類",
+    "See All": "すべて見る",
+    "Our standards": "当社の基準",
+    "Export Catalogue": "輸出カタログ",
+    "Product Catalogue": "製品カタログ",
+    "Browse our full range of Vietnamese seafood and agricultural products, with pack sizes and export specs.": "梱包サイズと輸出仕様とともに、当社のベトナム産水産物・農産物の全製品をご覧ください。",
+    "Request Now": "今すぐ依頼",
+    "Partner With Us?": "パートナーになりませんか？",
+    "Bring the richness of Vietnamese seafood and produce to your market with a supplier you can rely on.": "信頼できるサプライヤーとともに、ベトナム水産物・農産物の豊かさを貴社の市場へ。",
+    "Become a Buyer": "バイヤーになる",
+    "Let's work together": "一緒に取り組みましょう",
+    "Ready to source with confidence?": "自信を持って調達する準備はできていますか？",
+    "Tell us what you need and our team will respond with pricing and availability. Give us a chance to exceed your expectations.": "ご要望をお聞かせください。当社チームが価格と在庫状況をご返信します。期待を超える機会をぜひお与えください。",
+    "Email Us": "メールする",
+    "Get in touch": "お問い合わせ",
+    "Hotline": "ホットライン",
+    "Headquarters": "本社",
+    "Ho Chi Minh City, Vietnam": "ベトナム・ホーチミン市",
+    "Sourcing and exporting premium seafood and agricultural products to the world since 2002.": "2002年よりプレミアム水産物・農産物を調達し、世界へ輸出しています。",
+    "Explore": "探す",
+    "Lot 4-6-8, 1A Street, Tan Tao Industrial Park, Tan Tao A Ward, Binh Tan, HCMC, Vietnam": "ベトナム・ホーチミン市ビンタン区タンタオA坊タンタオ工業団地1A通りLot 4-6-8",
+    "© 2026 Gia Dai. All rights reserved.": "© 2026 Gia Dai. 無断複製禁止。",
+    "Better than your expectations": "ご期待以上に",
+    "Talk to Sales": "営業に相談",
+    "Request a quote": "見積もり依頼",
+    "View": "見る",
+    "products": "製品",
+    "Quality & standards": "品質・基準",
+    "Product Range": "製品ラインナップ",
+    "The full catalogue": "全カタログ",
+    "Premium Vietnamese seafood and agricultural products across five categories, sourced direct and packed to your export specification. Pricing, pack sizes and minimums are available on enquiry.": "5つのカテゴリーにわたるベトナム産プレミアム水産物・農産物を直接調達し、貴社の輸出仕様に合わせて包装します。価格、梱包サイズ、最小数量はお問い合わせにて承ります。",
+    "Get the full price list & export specs": "価格表・輸出仕様を入手",
+    "Tell us your target products, volumes and destination port, and we will respond with pricing, pack details and lead times.": "ご希望の製品、数量、仕向港をお知らせください。価格、梱包詳細、納期をご返信します。",
+    "A privately owned import and export company, sourcing and supplying premium Vietnamese seafood and agricultural products for both domestic and international markets. We have built our name on three things: good price, good quality and good service.": "国内外市場向けにベトナム産プレミアム水産物・農産物を調達・供給する民間の輸出入企業です。私たちは3つのことで名を築いてきました：良い価格、良い品質、良いサービス。",
+    "Our Story": "私たちの物語",
+    "From the Mekong Delta to the world": "メコンデルタから世界へ",
+    "Founded in 2002, Gia Dai has spent more than two decades sourcing and supplying Vietnamese seafood and agricultural products. We buy direct from trusted producers and ship to customers at home and overseas.": "2002年に創業したGia Daiは、20年以上にわたりベトナム産水産物・農産物を調達・供給してきました。信頼できる生産者から直接仕入れ、国内外のお客様へ出荷しています。",
+    "We work with green farms and fisheries where strict standards keep antibiotics and disease under control, so the products we ship are clean, safe and consistent. In 2012 we became a registered importer to the United States, opening the door to demanding international buyers.": "抗生物質や疾病を厳格な基準で管理する環境配慮型の農場・漁場と協力しているため、当社が出荷する製品は清潔で安全、かつ一貫しています。2012年には米国の登録輸入業者となり、要求の厳しい国際バイヤーへの扉を開きました。",
+    "Established": "設立",
+    "Years experience": "年の経験",
+    "Product categories": "製品カテゴリー",
+    "Products supplied": "供給製品数",
+    "Why Gia Dai": "なぜGia Daiか",
+    "01 · Good Price": "01 · 良い価格",
+    "02 · Good Quality": "02 · 良い品質",
+    "03 · Good Service": "03 · 良いサービス",
+    "Direct value": "直接の価値",
+    "Buying direct and keeping our overheads lean keeps our pricing competitive for buyers of every size.": "直接仕入れと無駄のない運営により、あらゆる規模のバイヤーに競争力ある価格を提供します。",
+    "Clean & safe": "清潔で安全",
+    "Controlled sourcing and an unbroken cold chain protect quality from the farm to the container.": "管理された調達と途切れないコールドチェーンが、農場からコンテナまで品質を守ります。",
+    "Reliable": "信頼性",
+    "Consistent supply, clear export documentation and a team that responds quickly.": "安定した供給、明確な輸出書類、迅速に対応するチーム。",
+    "Milestones": "沿革",
+    "How we grew": "成長の歩み",
+    "Founded in Ho Chi Minh City": "ホーチミン市で創業",
+    "Began sourcing and trading Vietnamese seafood and agricultural products.": "ベトナム産水産物・農産物の調達と取引を開始。",
+    "Registered US importer": "米国登録輸入業者",
+    "Became a legal importer to the United States, reaching demanding international buyers.": "米国の正規輸入業者となり、要求の厳しい国際バイヤーに到達。",
+    "20+ yrs": "20年以上",
+    "Two decades on": "20年を経て",
+    "A trusted supplier across five categories of seafood and agricultural products.": "5つの水産物・農産物カテゴリーで信頼されるサプライヤー。",
+    "Today": "現在",
+    "Growing worldwide": "世界へ成長",
+    "Supplying domestic and international markets, and welcoming new wholesale partners.": "国内外市場へ供給し、新たな卸売パートナーを歓迎しています。",
+    "Become a buyer": "バイヤーになる",
+    "Let's build a lasting supply": "永続的な供給を共に築きましょう",
+    "Open an account and source premium Vietnamese seafood and produce, with pricing, specs and lead times to match.": "アカウントを開設し、価格・仕様・納期に合わせてベトナム産プレミアム水産物・農産物を調達しましょう。",
+    "How we protect quality": "品質を守る方法",
+    "Standards we work to": "当社が遵守する基準",
+    "Quality runs through everything we do, from the farms and fisheries we buy from to the container we load. We have been a registered importer to the United States since 2012, and we stand behind every order to keep buyers confident in what they receive.": "品質は、仕入れる農場・漁場から積み込むコンテナまで、当社のすべてに貫かれています。2012年より米国の登録輸入業者として、すべての注文に責任を持ち、バイヤーが受け取る製品に確信を持てるようにしています。",
+    "Monitored farms & fisheries": "監視された農場・漁場",
+    "Quality checks each batch": "ロットごとの品質検査",
+    "Experience since 2002": "2002年からの経験",
+    "Full export documentation": "完全な輸出書類",
+    "Reliable Supply": "安定供給",
+    "Consistent volumes": "安定した数量",
+    "Our supply chain": "当社のサプライチェーン",
+    "Cold chain you can rely on": "信頼できるコールドチェーン",
+    "From source to container, every order is kept in a temperature-controlled, fully traceable cold chain on its way to your port.": "供給源からコンテナまで、すべての注文は貴社の港へ届くまで温度管理され、完全に追跡可能なコールドチェーンで維持されます。",
+    "Cold-Chain Handling": "コールドチェーン取り扱い",
+    "Frozen and chilled lines stay temperature-controlled from source through to export.": "冷凍・冷蔵品は供給源から輸出まで温度管理されます。",
+    "Full Traceability": "完全なトレーサビリティ",
+    "Lot-level documentation follows each order from source through to export.": "ロット単位の書類が、供給源から輸出まで各注文に付随します。",
+    "Our promise": "私たちの約束",
+    "Fair, direct": "公正・直接",
+    "Buying direct and keeping our overheads lean lets us keep pricing competitive without cutting corners.": "直接仕入れと無駄のない運営により、品質を妥協せず競争力ある価格を維持します。",
+    "Consistent": "一貫性",
+    "Careful cold-chain handling and inspection protect quality in every shipment we send.": "丁寧なコールドチェーン取り扱いと検査が、すべての出荷の品質を守ります。",
+    "Dependable": "頼れる",
+    "Clear documentation, reliable supply and a team that answers when you need it.": "明確な書類、安定した供給、必要なときに応答するチーム。",
+    "Where we ship": "出荷先",
+    "From source to your market": "供給源から貴社の市場へ",
+    "We supply the domestic Vietnamese market and export internationally, with United States import registration in place since 2012. Tell us your destination port and we will confirm specs, pricing and lead times.": "当社はベトナム国内市場へ供給するとともに国際的に輸出しており、2012年より米国輸入登録を保有しています。仕向港をお知らせいただければ、仕様・価格・納期を確認いたします。",
+    "United States": "米国",
+    "Domestic Vietnam": "ベトナム（国内）",
+    "International markets": "国際市場",
+    "Source with confidence": "自信を持って調達を",
+    "Quality you can taste, supply you can trust": "味わえる品質、信頼できる供給",
+    "Open an account and source premium Vietnamese seafood and produce backed by two decades of experience.": "アカウントを開設し、20年の経験に裏打ちされたベトナム産プレミアム水産物・農産物を調達しましょう。",
+    "Wholesale & Export": "卸売・輸出",
+    "We supply importers, distributors, supermarkets and foodservice groups with premium Vietnamese seafood and agricultural products, packed to your specification and shipped from Ho Chi Minh City.": "当社は輸入業者、卸売業者、スーパーマーケット、外食グループへ、ベトナム産プレミアム水産物・農産物を貴社の仕様に合わせて包装し、ホーチミン市から出荷します。",
+    "Why buy from us": "当社を選ぶ理由",
+    "One trusted supplier": "信頼できる一つのサプライヤー",
+    "01 · Range": "01 · 品揃え",
+    "02 · Quality": "02 · 品質",
+    "03 · Flexible": "03 · 柔軟性",
+    "Five categories": "5つのカテゴリー",
+    "Seafood, agriculture and prepared food in one supplier, so you can consolidate your Vietnamese sourcing.": "水産物、農産物、調理済み食品を一つのサプライヤーで提供し、ベトナム調達を一本化できます。",
+    "Cold-chain handling, controlled sourcing and careful inspection, with the documentation your market needs.": "コールドチェーン取り扱い、管理された調達、丁寧な検査、そして貴社の市場が必要とする書類。",
+    "Your spec": "貴社の仕様",
+    "Pack sizes, grading, labelling and Incoterms tailored to your destination and channel.": "仕向地と販売チャネルに合わせた梱包サイズ、等級分け、ラベル、インコタームズ。",
+    "How it works": "ご利用の流れ",
+    "From enquiry to container": "問い合わせからコンテナまで",
+    "Send your target products, volumes and destination port.": "ご希望の製品、数量、仕向港をお送りください。",
+    "Quote & samples": "見積もり・サンプル",
+    "We reply with pricing, specs, lead times and samples on request.": "ご要望に応じて価格、仕様、納期、サンプルをご返信します。",
+    "Confirm order": "注文確定",
+    "Agree pack, labelling and Incoterms, then we schedule sourcing and shipment.": "梱包、ラベル、インコタームズに合意後、調達と出荷を手配します。",
+    "Ship & document": "出荷・書類",
+    "Cold-chain export with full documentation to your port.": "完全な書類とともに貴社の港へコールドチェーン輸出。",
+    "Tell us what you need": "ご要望をお聞かせください",
+    "Share your requirements and we will respond with pricing and availability, usually within one business day.": "ご要望をお知らせいただければ、通常1営業日以内に価格と在庫状況をご返信します。",
+    "What you'll get": "ご提供する内容",
+    "Product specs and pack configurations": "製品仕様と梱包構成",
+    "FOB or CIF pricing for your port": "貴社の港向けFOBまたはCIF価格",
+    "Lead times and minimum order quantities": "納期と最小注文数量",
+    "Company": "会社名",
+    "Country / market": "国 / 市場",
+    "Contact name": "担当者名",
+    "Products of interest": "関心のある製品",
+    "Estimated volume": "予想数量",
+    "Details": "詳細",
+    "Send Enquiry": "問い合わせを送信",
+    "Multiple / not sure yet": "複数 / 未定",
+    "Not sure": "未定",
+    "e.g. 2 x 40ft / month": "例：月2 x 40ft",
+    "Destination port, packing, labelling, timelines…": "仕向港、梱包、ラベル、スケジュール…",
+    "Thanks, your enquiry has been received. Our export team will be in touch within one business day.": "ありがとうございます。お問い合わせを受け付けました。当社輸出チームが1営業日以内にご連絡します。",
+    "Talk to our team": "当社チームに相談",
+    "Phone": "電話",
+    "Head office": "本社",
+    "Lot 4-6-8, 1A Street, Tan Tao Industrial Park,": "タンタオ工業団地1A通りLot 4-6-8、",
+    "Tan Tao A Ward, Binh Tan District, Ho Chi Minh City, Vietnam": "ベトナム・ホーチミン市ビンタン区タンタオA坊",
+    "Name": "氏名",
+    "Subject": "件名",
+    "Message": "メッセージ",
+    "Pricing & availability": "価格・在庫",
+    "Product samples": "製品サンプル",
+    "General enquiry": "一般的なお問い合わせ",
+    "How can we help?": "どのようなご用件でしょうか？",
+    "Send Message": "メッセージを送信",
+    "Thanks, your message has been received. We'll reply within one business day.": "ありがとうございます。メッセージを受け付けました。1営業日以内にご返信します。",
+    "More from this range": "このシリーズの他の製品",
+    "Related products": "関連製品",
+    "Interested in this product?": "この製品にご関心がありますか？",
+    "Category": "カテゴリー",
+    "Vietnamese name": "ベトナム語名",
+    "Packaging": "梱包",
+    "Availability": "在庫状況",
+    "Markets": "市場",
+    "Minimum order": "最小注文",
+    "United States, domestic & international": "米国、国内・国際",
+    "On enquiry": "お問い合わせにて"
+  };
+  /* ---------------------------------------------------------- CHINESE (Simplified) */
+  DICT.zh = {
+    "Premium Vietnamese Seafood & Agricultural Export · Since 2002": "越南优质海产品与农产品出口 · 始于2002年",
+    "Home": "首页",
+    "Products": "产品",
+    "Quality": "品质",
+    "Wholesale": "批发",
+    "About": "关于我们",
+    "About Us": "关于我们",
+    "About Us ": "关于我们",
+    "Contact": "联系我们",
+    "Request a Quote": "索取报价",
+    "Search products…": "搜索产品…",
+    "Seafood & Agricultural Export": "海产品与农产品出口",
+    "From the Mekong": "从湄公河",
+    "to the world.": "走向世界。",
+    "Premium Vietnamese Seafood & Agriculture · Since 2002": "越南优质海产品与农产品 · 始于2002年",
+    "We source and export premium Vietnamese seafood and agricultural products, from frozen and dried seafood to prepared foods, shipping direct from Ho Chi Minh City to importers worldwide.": "我们采购并出口越南优质海产品与农产品，从冷冻、干制海产品到预制食品，由胡志明市直接发往全球进口商。",
+    "Browse Catalogue": "浏览目录",
+    "Your Vietnamese food specialist": "您的越南食品专家",
+    "A privately owned import and export company supplying premium Vietnamese seafood and agricultural products from Ho Chi Minh City to markets at home and abroad. More than twenty years on, our promise is simple: good price, good quality, good service.": "一家私营进出口企业，从胡志明市向国内外市场供应越南优质海产品与农产品。二十多年来，我们的承诺始终简单：好价格、好品质、好服务。",
+    "Cold-Chain Logistics": "冷链物流",
+    "Temperature-controlled handling and shipping keep frozen and chilled lines at peak condition, port to port.": "温控操作与运输让冷冻和冷藏产品从港到港始终保持最佳状态。",
+    "Direct Sourcing & Export": "直接采购与出口",
+    "Bought straight from trusted Vietnamese farms and fisheries, then shipped worldwide with full documentation.": "直接从值得信赖的越南农场和渔场采购，并附齐全单证发往全球。",
+    "Est. Since": "成立于",
+    "Seafood": "海产品",
+    "Premium Seafood": "优质海产品",
+    "Frozen and dried shrimp, fish, squid and crab from Vietnam's coast and the Mekong Delta.": "来自越南海岸和湄公河三角洲的冷冻及干制虾、鱼、鱿鱼和蟹。",
+    "Agriculture": "农产品",
+    "Agricultural Products": "农产品",
+    "Frozen and dried agricultural goods, from chili and okra to jackfruit, nuts and coconut.": "冷冻及干制农产品，从辣椒、秋葵到菠萝蜜、坚果和椰子。",
+    "Food": "食品",
+    "Prepared Food": "预制食品",
+    "Ready-to-cook Vietnamese specialities and value-added dishes, packed for export.": "即烹越南特色美食与增值菜品，专为出口包装。",
+    "Product Portfolio": "产品系列",
+    "Explore our categories": "探索我们的品类",
+    "View full catalogue": "查看完整目录",
+    "frozen fresh seafood": "冷冻鲜活海产品",
+    "dried seafood": "干制海产品",
+    "frozen fresh agricultural": "冷冻鲜活农产品",
+    "dried agricultural": "干制农产品",
+    "prepared food": "预制食品",
+    "exotic dried fruit": "异域果干",
+    "Frozen Fresh Seafood": "冷冻鲜活海产品",
+    "Dried Seafood": "干制海产品",
+    "Frozen Fresh Agricultural": "冷冻鲜活农产品",
+    "Dried Agricultural": "干制农产品",
+    "Exotic Dried Fruit": "异域果干",
+    "Featured": "精选",
+    "Popular products": "热门产品",
+    "View all": "查看全部",
+    "Frozen": "冷冻",
+    "Dried": "干制",
+    "Frozen Salted Crab": "冷冻盐渍蟹",
+    "Dried Gourami Fish": "干制丝足鱼",
+    "Frozen Red Chili": "冷冻红辣椒",
+    "Shrimp Spring Rolls": "鲜虾春卷",
+    "Export ready": "可供出口",
+    "Enquire": "咨询",
+    "Quality You Can Trust": "值得信赖的品质",
+    "Quality & Standards": "品质与标准",
+    "US Registered": "美国注册",
+    "Importer since 2012": "自2012年起为进口商",
+    "Cold Chain": "冷链",
+    "Temperature controlled": "温度控制",
+    "Controlled Source": "受控来源",
+    "Trusted farms": "可信农场",
+    "Traceable": "可追溯",
+    "Lot-level records": "批次级记录",
+    "Inspected": "已检验",
+    "Every batch": "每一批次",
+    "20+ Years": "20多年",
+    "Since 2002": "自2002年",
+    "Export Ready": "可供出口",
+    "Full documentation": "齐全单证",
+    "See All": "查看全部",
+    "Our standards": "我们的标准",
+    "Export Catalogue": "出口目录",
+    "Product Catalogue": "产品目录",
+    "Browse our full range of Vietnamese seafood and agricultural products, with pack sizes and export specs.": "浏览我们全系列的越南海产品与农产品，附包装规格与出口参数。",
+    "Request Now": "立即索取",
+    "Partner With Us?": "与我们合作？",
+    "Bring the richness of Vietnamese seafood and produce to your market with a supplier you can rely on.": "携手值得信赖的供应商，将越南海产品与农产的丰富带入您的市场。",
+    "Become a Buyer": "成为采购商",
+    "Let's work together": "携手合作",
+    "Ready to source with confidence?": "准备好放心采购了吗？",
+    "Tell us what you need and our team will respond with pricing and availability. Give us a chance to exceed your expectations.": "告诉我们您的需求，我们的团队将回复价格与供货情况。请给我们一个超越您期待的机会。",
+    "Email Us": "发送邮件",
+    "Get in touch": "联系我们",
+    "Hotline": "热线",
+    "Headquarters": "总部",
+    "Ho Chi Minh City, Vietnam": "越南胡志明市",
+    "Sourcing and exporting premium seafood and agricultural products to the world since 2002.": "自2002年起采购优质海产品与农产品并出口全球。",
+    "Explore": "探索",
+    "Lot 4-6-8, 1A Street, Tan Tao Industrial Park, Tan Tao A Ward, Binh Tan, HCMC, Vietnam": "越南胡志明市平新郡新造A坊新造工业园1A街4-6-8号",
+    "© 2026 Gia Dai. All rights reserved.": "© 2026 Gia Dai. 版权所有。",
+    "Better than your expectations": "超越您的期待",
+    "Talk to Sales": "联系销售",
+    "Request a quote": "索取报价",
+    "View": "查看",
+    "products": "产品",
+    "Quality & standards": "品质与标准",
+    "Product Range": "产品种类",
+    "The full catalogue": "完整目录",
+    "Premium Vietnamese seafood and agricultural products across five categories, sourced direct and packed to your export specification. Pricing, pack sizes and minimums are available on enquiry.": "涵盖五大品类的越南优质海产品与农产品，直接采购并按您的出口规格包装。价格、包装规格及最低订量均可咨询获取。",
+    "Get the full price list & export specs": "获取完整价目表与出口参数",
+    "Tell us your target products, volumes and destination port, and we will respond with pricing, pack details and lead times.": "告诉我们您的目标产品、数量和目的港，我们将回复价格、包装详情和交货周期。",
+    "A privately owned import and export company, sourcing and supplying premium Vietnamese seafood and agricultural products for both domestic and international markets. We have built our name on three things: good price, good quality and good service.": "一家私营进出口企业，为国内外市场采购并供应越南优质海产品与农产品。我们凭三点立足：好价格、好品质、好服务。",
+    "Our Story": "我们的故事",
+    "From the Mekong Delta to the world": "从湄公河三角洲走向世界",
+    "Founded in 2002, Gia Dai has spent more than two decades sourcing and supplying Vietnamese seafood and agricultural products. We buy direct from trusted producers and ship to customers at home and overseas.": "Gia Dai成立于2002年，二十多年来一直采购并供应越南海产品与农产品。我们直接向可信生产商采购，并向国内外客户发货。",
+    "We work with green farms and fisheries where strict standards keep antibiotics and disease under control, so the products we ship are clean, safe and consistent. In 2012 we became a registered importer to the United States, opening the door to demanding international buyers.": "我们与绿色农场和渔场合作，以严格标准控制抗生素与病害，因此我们发出的产品洁净、安全、品质稳定。2012年，我们成为美国注册进口商，向要求严苛的国际买家敞开大门。",
+    "Established": "成立",
+    "Years experience": "年经验",
+    "Product categories": "产品品类",
+    "Products supplied": "供应产品",
+    "Why Gia Dai": "为何选择Gia Dai",
+    "01 · Good Price": "01 · 好价格",
+    "02 · Good Quality": "02 · 好品质",
+    "03 · Good Service": "03 · 好服务",
+    "Direct value": "直接价值",
+    "Buying direct and keeping our overheads lean keeps our pricing competitive for buyers of every size.": "直接采购并精简运营成本，让我们为各种规模的买家保持有竞争力的价格。",
+    "Clean & safe": "洁净安全",
+    "Controlled sourcing and an unbroken cold chain protect quality from the farm to the container.": "受控采购与不间断的冷链，从农场到集装箱全程守护品质。",
+    "Reliable": "可靠",
+    "Consistent supply, clear export documentation and a team that responds quickly.": "稳定供应、清晰的出口单证，以及快速响应的团队。",
+    "Milestones": "里程碑",
+    "How we grew": "我们的成长历程",
+    "Founded in Ho Chi Minh City": "在胡志明市成立",
+    "Began sourcing and trading Vietnamese seafood and agricultural products.": "开始采购并经营越南海产品与农产品。",
+    "Registered US importer": "美国注册进口商",
+    "Became a legal importer to the United States, reaching demanding international buyers.": "成为美国合法进口商，触达要求严苛的国际买家。",
+    "20+ yrs": "20多年",
+    "Two decades on": "二十年历程",
+    "A trusted supplier across five categories of seafood and agricultural products.": "横跨五大海产品与农产品品类、值得信赖的供应商。",
+    "Today": "如今",
+    "Growing worldwide": "走向全球",
+    "Supplying domestic and international markets, and welcoming new wholesale partners.": "供应国内外市场，并欢迎新的批发合作伙伴。",
+    "Become a buyer": "成为采购商",
+    "Let's build a lasting supply": "共建长久供应",
+    "Open an account and source premium Vietnamese seafood and produce, with pricing, specs and lead times to match.": "开设账户，采购越南优质海产品与农产品，并获得匹配的价格、规格与交货周期。",
+    "How we protect quality": "我们如何守护品质",
+    "Standards we work to": "我们遵循的标准",
+    "Quality runs through everything we do, from the farms and fisheries we buy from to the container we load. We have been a registered importer to the United States since 2012, and we stand behind every order to keep buyers confident in what they receive.": "品质贯穿我们所做的一切，从采购的农场、渔场到装载的集装箱。自2012年起我们便是美国注册进口商，为每一笔订单负责，让买家对所收货物充满信心。",
+    "Monitored farms & fisheries": "受监控的农场与渔场",
+    "Quality checks each batch": "每批次质量检验",
+    "Experience since 2002": "自2002年的经验",
+    "Full export documentation": "齐全的出口单证",
+    "Reliable Supply": "稳定供应",
+    "Consistent volumes": "稳定的供货量",
+    "Our supply chain": "我们的供应链",
+    "Cold chain you can rely on": "值得信赖的冷链",
+    "From source to container, every order is kept in a temperature-controlled, fully traceable cold chain on its way to your port.": "从源头到集装箱，每一笔订单在运往您港口的途中都保持在温控且全程可追溯的冷链中。",
+    "Cold-Chain Handling": "冷链操作",
+    "Frozen and chilled lines stay temperature-controlled from source through to export.": "冷冻和冷藏产品从源头到出口全程温控。",
+    "Full Traceability": "全程可追溯",
+    "Lot-level documentation follows each order from source through to export.": "批次级单证伴随每笔订单从源头直至出口。",
+    "Our promise": "我们的承诺",
+    "Fair, direct": "公平、直接",
+    "Buying direct and keeping our overheads lean lets us keep pricing competitive without cutting corners.": "直接采购并精简成本，让我们在不偷工减料的前提下保持价格竞争力。",
+    "Consistent": "稳定一致",
+    "Careful cold-chain handling and inspection protect quality in every shipment we send.": "细致的冷链操作与检验守护我们发出的每一批货物的品质。",
+    "Dependable": "可依赖",
+    "Clear documentation, reliable supply and a team that answers when you need it.": "清晰的单证、可靠的供应，以及在您需要时随时回应的团队。",
+    "Where we ship": "我们的发货地区",
+    "From source to your market": "从源头到您的市场",
+    "We supply the domestic Vietnamese market and export internationally, with United States import registration in place since 2012. Tell us your destination port and we will confirm specs, pricing and lead times.": "我们供应越南国内市场并出口国际，自2012年起已具备美国进口注册资质。告诉我们您的目的港，我们将确认规格、价格与交货周期。",
+    "United States": "美国",
+    "Domestic Vietnam": "越南（国内）",
+    "International markets": "国际市场",
+    "Source with confidence": "放心采购",
+    "Quality you can taste, supply you can trust": "尝得到的品质，靠得住的供应",
+    "Open an account and source premium Vietnamese seafood and produce backed by two decades of experience.": "开设账户，采购以二十年经验为后盾的越南优质海产品与农产品。",
+    "Wholesale & Export": "批发与出口",
+    "We supply importers, distributors, supermarkets and foodservice groups with premium Vietnamese seafood and agricultural products, packed to your specification and shipped from Ho Chi Minh City.": "我们为进口商、分销商、超市和餐饮集团供应越南优质海产品与农产品，按您的规格包装，由胡志明市发货。",
+    "Why buy from us": "为何向我们采购",
+    "One trusted supplier": "一家值得信赖的供应商",
+    "01 · Range": "01 · 品类",
+    "02 · Quality": "02 · 品质",
+    "03 · Flexible": "03 · 灵活",
+    "Five categories": "五大品类",
+    "Seafood, agriculture and prepared food in one supplier, so you can consolidate your Vietnamese sourcing.": "海产品、农产品与预制食品集于一家供应商，让您整合越南采购。",
+    "Cold-chain handling, controlled sourcing and careful inspection, with the documentation your market needs.": "冷链操作、受控采购与细致检验，并备齐您市场所需的单证。",
+    "Your spec": "按您的规格",
+    "Pack sizes, grading, labelling and Incoterms tailored to your destination and channel.": "包装规格、分级、标签与贸易术语，均按您的目的地与渠道定制。",
+    "How it works": "运作方式",
+    "From enquiry to container": "从咨询到集装箱",
+    "Send your target products, volumes and destination port.": "发送您的目标产品、数量和目的港。",
+    "Quote & samples": "报价与样品",
+    "We reply with pricing, specs, lead times and samples on request.": "我们回复价格、规格、交货周期，并可应要求提供样品。",
+    "Confirm order": "确认订单",
+    "Agree pack, labelling and Incoterms, then we schedule sourcing and shipment.": "就包装、标签和贸易术语达成一致后，我们安排采购与发运。",
+    "Ship & document": "发运与单证",
+    "Cold-chain export with full documentation to your port.": "以齐全单证冷链出口至您的港口。",
+    "Tell us what you need": "告诉我们您的需求",
+    "Share your requirements and we will respond with pricing and availability, usually within one business day.": "分享您的需求，我们通常会在一个工作日内回复价格与供货情况。",
+    "What you'll get": "您将获得",
+    "Product specs and pack configurations": "产品规格与包装配置",
+    "FOB or CIF pricing for your port": "面向您港口的FOB或CIF价格",
+    "Lead times and minimum order quantities": "交货周期与最低订购量",
+    "Company": "公司",
+    "Country / market": "国家 / 市场",
+    "Contact name": "联系人姓名",
+    "Products of interest": "感兴趣的产品",
+    "Estimated volume": "预计数量",
+    "Details": "详情",
+    "Send Enquiry": "发送咨询",
+    "Multiple / not sure yet": "多种 / 尚未确定",
+    "Not sure": "尚未确定",
+    "e.g. 2 x 40ft / month": "例如：每月 2 x 40ft",
+    "Destination port, packing, labelling, timelines…": "目的港、包装、标签、时间安排…",
+    "Thanks, your enquiry has been received. Our export team will be in touch within one business day.": "感谢您，我们已收到您的咨询。我们的出口团队将在一个工作日内与您联系。",
+    "Talk to our team": "联系我们的团队",
+    "Phone": "电话",
+    "Head office": "总部",
+    "Lot 4-6-8, 1A Street, Tan Tao Industrial Park,": "新造工业园1A街4-6-8号，",
+    "Tan Tao A Ward, Binh Tan District, Ho Chi Minh City, Vietnam": "越南胡志明市平新郡新造A坊",
+    "Name": "姓名",
+    "Subject": "主题",
+    "Message": "留言",
+    "Pricing & availability": "价格与供货",
+    "Product samples": "产品样品",
+    "General enquiry": "一般咨询",
+    "How can we help?": "我们能为您做些什么？",
+    "Send Message": "发送留言",
+    "Thanks, your message has been received. We'll reply within one business day.": "感谢您，我们已收到您的留言。我们将在一个工作日内回复。",
+    "More from this range": "该系列更多产品",
+    "Related products": "相关产品",
+    "Interested in this product?": "对该产品感兴趣？",
+    "Category": "品类",
+    "Vietnamese name": "越南语名称",
+    "Packaging": "包装",
+    "Availability": "供货情况",
+    "Markets": "市场",
+    "Minimum order": "最低订量",
+    "United States, domestic & international": "美国、国内与国际",
+    "On enquiry": "咨询获取"
+  };
 
   var STORE_KEY = 'giadai-lang';
 
-  /* collect translatable text nodes once, caching the English original */
+  function injectStyles() {
+    if (document.getElementById('giadai-i18n-style')) return;
+    var css =
+      '.lang{position:relative;display:inline-flex;align-items:center}' +
+      '.lang-btn{display:inline-flex;align-items:center;gap:6px;background:none;border:0;' +
+        'font:inherit;color:inherit;cursor:pointer;padding:2px 2px;letter-spacing:.04em;' +
+        'text-transform:uppercase;font-size:inherit;opacity:.85}' +
+      '.lang-btn:hover{opacity:1}' +
+      '.lang-btn .chev{font-size:.7em;opacity:.7;transform:translateY(1px)}' +
+      '.lang-menu{position:absolute;top:calc(100% + 8px);right:0;z-index:120;min-width:148px;' +
+        'background:#fff;color:#231a15;border:1px solid rgba(0,0,0,.1);border-radius:10px;' +
+        'box-shadow:0 14px 34px rgba(0,0,0,.16);padding:6px;display:none;text-transform:none;' +
+        'letter-spacing:normal}' +
+      '.lang-menu.open{display:block}' +
+      '.lang-menu button{display:flex;width:100%;align-items:center;gap:10px;background:none;' +
+        'border:0;text-align:left;font:inherit;font-size:14px;color:#231a15;cursor:pointer;' +
+        'padding:8px 10px;border-radius:7px;line-height:1.1}' +
+      '.lang-menu button:hover{background:rgba(0,0,0,.05)}' +
+      '.lang-menu button .code{font-size:11px;font-weight:700;letter-spacing:.06em;opacity:.5;' +
+        'min-width:22px}' +
+      '.lang-menu button.on{background:rgba(176,42,42,.08);color:#b02a2a;font-weight:600}' +
+      '.lang-menu button.on .code{opacity:.8;color:#b02a2a}' +
+      'html[lang="ko"] body,html[lang="ja"] body,html[lang="zh"] body{' +
+        'font-family:"Hanken Grotesk","Noto Sans KR","Noto Sans JP","Noto Sans SC",' +
+        '-apple-system,"Helvetica Neue",sans-serif}';
+    var s = document.createElement('style');
+    s.id = 'giadai-i18n-style';
+    s.textContent = css;
+    document.head.appendChild(s);
+  }
+
   function collectNodes() {
     var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
       acceptNode: function (n) {
@@ -297,49 +1257,50 @@
         if (!p) return NodeFilter.FILTER_REJECT;
         var tag = p.nodeName;
         if (tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
+        if (p.closest && p.closest('.lang')) return NodeFilter.FILTER_REJECT;
         if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       }
     });
-    var nodes = [];
-    var node;
+    var nodes = [], node;
     while ((node = walker.nextNode())) nodes.push(node);
     return nodes;
   }
 
-  /* attributes worth translating (placeholders, etc.) */
   function attrTargets() {
-    return Array.prototype.map.call(
-      document.querySelectorAll('[placeholder]'),
-      function (el) { return el; }
-    );
+    return Array.prototype.slice.call(document.querySelectorAll('[placeholder]'));
   }
 
   function apply(lang) {
-    var nodes = collectNodes();
-    nodes.forEach(function (n) {
-      if (n.__en === undefined) n.__en = n.nodeValue;          // cache original
+    var map = DICT[lang] || null;
+    collectNodes().forEach(function (n) {
+      if (n.__en === undefined) n.__en = n.nodeValue;
       var key = n.__en.trim();
       var lead = n.__en.match(/^\s*/)[0];
       var tail = n.__en.match(/\s*$/)[0];
-      if (lang === 'vi' && VI[key]) n.nodeValue = lead + VI[key] + tail;
-      else n.nodeValue = n.__en;                                 // restore EN
+      if (map && map[key]) n.nodeValue = lead + map[key] + tail;
+      else n.nodeValue = n.__en;
     });
-
     attrTargets().forEach(function (el) {
       if (el.__phEn === undefined) el.__phEn = el.getAttribute('placeholder');
       var key = (el.__phEn || '').trim();
-      if (lang === 'vi' && VI[key]) el.setAttribute('placeholder', VI[key]);
+      if (map && map[key]) el.setAttribute('placeholder', map[key]);
       else el.setAttribute('placeholder', el.__phEn);
     });
+    document.documentElement.setAttribute('lang', lang);
+    updateButton(lang);
+  }
 
-    document.documentElement.setAttribute('lang', lang === 'vi' ? 'vi' : 'en');
+  var btnLabel = null, menuEl = null;
 
-    /* toggle the active pill in the EN/VI switch */
-    document.querySelectorAll('.lang a').forEach(function (a) {
-      var t = a.textContent.trim().toUpperCase();
-      a.classList.toggle('on', (lang === 'vi' && t === 'VI') || (lang !== 'vi' && t === 'EN'));
-    });
+  function updateButton(lang) {
+    var cur = LANGS.filter(function (l) { return l.code === lang; })[0] || LANGS[0];
+    if (btnLabel) btnLabel.textContent = cur.short;
+    if (menuEl) {
+      Array.prototype.forEach.call(menuEl.querySelectorAll('button'), function (b) {
+        b.classList.toggle('on', b.getAttribute('data-code') === lang);
+      });
+    }
   }
 
   function setLang(lang) {
@@ -347,19 +1308,67 @@
     apply(lang);
   }
 
-  function init() {
-    var saved = 'en';
-    try { saved = localStorage.getItem(STORE_KEY) || 'en'; } catch (e) {}
+  function buildSwitcher() {
+    var host = document.querySelector('.lang');
+    if (!host) return;
+    host.innerHTML = '';
 
-    /* wire the EN / VI links */
-    document.querySelectorAll('.lang a').forEach(function (a) {
-      a.addEventListener('click', function (e) {
-        e.preventDefault();
-        var t = a.textContent.trim().toUpperCase();
-        setLang(t === 'VI' ? 'vi' : 'en');
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'lang-btn';
+    btn.setAttribute('aria-haspopup', 'true');
+    btn.setAttribute('aria-expanded', 'false');
+    btnLabel = document.createElement('span');
+    btnLabel.textContent = 'EN';
+    var chev = document.createElement('span');
+    chev.className = 'chev';
+    chev.textContent = '▾';
+    btn.appendChild(btnLabel);
+    btn.appendChild(chev);
+
+    menuEl = document.createElement('div');
+    menuEl.className = 'lang-menu';
+    LANGS.forEach(function (l) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('data-code', l.code);
+      var code = document.createElement('span');
+      code.className = 'code';
+      code.textContent = l.short;
+      var label = document.createElement('span');
+      label.textContent = l.label;
+      b.appendChild(code);
+      b.appendChild(label);
+      b.addEventListener('click', function () {
+        setLang(l.code);
+        closeMenu();
       });
+      menuEl.appendChild(b);
     });
 
+    host.appendChild(btn);
+    host.appendChild(menuEl);
+
+    function openMenu() { menuEl.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); }
+    function closeMenu() { menuEl.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); }
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (menuEl.classList.contains('open')) closeMenu(); else openMenu();
+    });
+    document.addEventListener('click', function (e) {
+      if (!host.contains(e.target)) closeMenu();
+    });
+    window.__giadaiCloseLangMenu = closeMenu;
+  }
+  function closeMenu() { if (window.__giadaiCloseLangMenu) window.__giadaiCloseLangMenu(); }
+
+  function init() {
+    injectStyles();
+    buildSwitcher();
+    var saved = 'en';
+    try { saved = localStorage.getItem(STORE_KEY) || 'en'; } catch (e) {}
+    if (!DICT[saved] && saved !== 'en') saved = 'en';
     apply(saved);
   }
 
