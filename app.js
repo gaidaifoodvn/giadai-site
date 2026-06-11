@@ -112,13 +112,48 @@
     apply();
   }
 
-  /* ---- forms: front-end only (no backend wired) ---- */
-  document.querySelectorAll('form[data-demo]').forEach(function (form) {
+  /* ---- forms: submit to Web3Forms (emails giadaifoodvn@gmail.com) ---- */
+  document.querySelectorAll('form[data-web3form]').forEach(function (form) {
+    var note = form.querySelector('[data-form-note]');
+    var btn = form.querySelector('button[type="submit"]');
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      var note = form.querySelector('[data-form-note]');
-      if (note) { note.hidden = false; note.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-      form.reset();
+
+      /* basic required-field check */
+      if (!form.checkValidity()) { form.reportValidity(); return; }
+
+      var btnText = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = 'Sending…'; }
+
+      fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: new FormData(form)
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data && data.success) {
+            if (note) {
+              note.hidden = false;
+              note.style.color = '#2ea44f';
+              note.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            form.reset();
+          } else {
+            showErr();
+          }
+        })
+        .catch(showErr)
+        .finally(function () { if (btn) { btn.disabled = false; btn.innerHTML = btnText; } });
+
+      function showErr() {
+        if (note) {
+          note.hidden = false;
+          note.style.color = '#c0392b';
+          note.textContent = 'Sorry, something went wrong. Please email us directly at giadaifoodvn@gmail.com.';
+          note.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
     });
   });
 })();

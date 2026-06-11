@@ -92,7 +92,11 @@
       </div>
     </div>
     <div class="reveal" data-d="1">
-      <form class="form-grid" data-demo novalidate>
+      <form class="form-grid" data-web3form novalidate>
+        <input type="hidden" name="access_key" value="f969f44a-ca6b-42f2-9f60-aeadf18cfd98" />
+        <input type="hidden" name="subject" value="New wholesale enquiry — Gia Dai website" />
+        <input type="hidden" name="from_name" value="Gia Dai Website" />
+        <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" style="display:none;" aria-hidden="true" />
         <div class="field"><label for="company">Company</label><input id="company" name="company" type="text" required /></div>
         <div class="field"><label for="country">Country / market</label><input id="country" name="country" type="text" /></div>
         <div class="field"><label for="name">Contact name</label><input id="name" name="name" type="text" required /></div>
@@ -113,7 +117,7 @@
         </div>
         <div class="field full"><label for="msg">Details</label><textarea id="msg" name="msg" placeholder="Destination port, packing, labelling, timelines…"></textarea></div>
         <div class="field full"><button type="submit" class="btn btn-primary">Send Enquiry <span class="arr">→</span></button></div>
-        <p class="field full" data-form-note hidden style="color:#2ea44f; font-weight:600;">Thanks, your enquiry has been received. Our export team will be in touch within one business day. (Demo form, no data is sent.)</p>
+        <p class="field full" data-form-note hidden style="color:#2ea44f; font-weight:600;">Thanks, your enquiry has been received. Our export team will be in touch within one business day.</p>
       </form>
     </div>
   </div>
@@ -136,5 +140,6 @@
 </footer>
 
 <script src="app.js"></script>
+<script src="i18n.js"></script>
 </body>
 </html>
